@@ -273,3 +273,4 @@ NORTH30-ETF-Analyzer/
 - Commit 信息遵循 [Conventional Commits](https://www.conventionalcommits.org/) 规范
 
 ## 许可证
+MIT
