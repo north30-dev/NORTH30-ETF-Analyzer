@@ -159,6 +159,32 @@ class ETFCLI:
             return str(value)
 
     @staticmethod
+    def _color_compared_to(value, reference):
+        """根据与参考值的比较结果返回带颜色的字符串。
+
+        高于参考值显示红色（涨），低于参考值显示绿色（跌），
+        相等或无法比较则返回默认颜色。
+
+        Args:
+            value: 待着色的数值或字符串。
+            reference: 参考值（如昨收价）。
+
+        Returns:
+            str: 带 ANSI 颜色码的字符串（已包含重置码）。
+        """
+        try:
+            v = float(value)
+            r = float(reference)
+            if v > r:
+                return f"{ETFCLI._COLOR_RED}{value}{ETFCLI._COLOR_RESET}"
+            elif v < r:
+                return f"{ETFCLI._COLOR_GREEN}{value}{ETFCLI._COLOR_RESET}"
+            else:
+                return str(value)
+        except (ValueError, TypeError):
+            return str(value)
+
+    @staticmethod
     def _format_number(value, decimals=4, as_percentage=False):
         """格式化数值，消除科学计数法，按精度显示可读数字。
 
@@ -179,6 +205,33 @@ class ETFCLI:
             if as_percentage:
                 return f"{num * 100:.{decimals}f}%"
             return f"{num:.{decimals}f}"
+        except (ValueError, TypeError):
+            return str(value)
+
+    @staticmethod
+    def _format_volume(value, decimals=3):
+        """格式化成交量/成交额，自动转换为万/亿单位。
+
+        将大数字转为带单位的可读字符串：
+        - >= 1亿 → xxx.xxx亿
+        - >= 1万 → xxx.xxx万
+        - < 1万 → 原值
+
+        Args:
+            value: 数值或字符串。
+            decimals (int): 小数位数，默认为 3。
+
+        Returns:
+            str: 带单位的格式化字符串。
+        """
+        try:
+            num = float(value)
+            if abs(num) >= 100_000_000:
+                return f"{num / 100_000_000:.{decimals}f}亿"
+            elif abs(num) >= 10_000:
+                return f"{num / 10_000:.{decimals}f}万"
+            else:
+                return f"{num:.{decimals}f}"
         except (ValueError, TypeError):
             return str(value)
 
@@ -349,11 +402,51 @@ class ETFCLI:
             # 显示前20条结果
             display_cols = ["代码", "名称", "最新价", "涨跌幅", "成交额"]
             available_cols = [c for c in display_cols if c in df.columns]
-            display_df = df[available_cols].head(20)
+            display_df = df[available_cols].head(20).copy()
 
             print(f"\n  共找到 {len(df)} 条记录，显示前 {min(20, len(df))} 条：")
             self._print_separator("=", 70)
-            print(display_df.to_string(index=False))
+
+            # 表头
+            headers = list(display_df.columns)
+            print("  ".join(f"{h:>10}" for h in headers))
+
+            # 逐行格式化（着色价格列，格式化成交额列）
+            for _, row in display_df.iterrows():
+                price_val = row.get("最新价", 0)
+                change_val = row.get("涨跌幅", 0)
+                amount_val = row.get("成交额", 0)
+
+                # 根据涨跌幅正负对最新价着色
+                price_str = self._format_number(price_val, 3)
+                try:
+                    if float(change_val) > 0:
+                        price_str = f"{ETFCLI._COLOR_RED}{price_str}{ETFCLI._COLOR_RESET}"
+                    elif float(change_val) < 0:
+                        price_str = f"{ETFCLI._COLOR_GREEN}{price_str}{ETFCLI._COLOR_RESET}"
+                except (ValueError, TypeError):
+                    pass
+
+                # 涨跌幅着色
+                change_str = self._format_number(change_val, 2)
+                change_str = self._color_value(change_str)
+
+                # 成交额加单位
+                amount_str = self._format_volume(amount_val)
+
+                cols = []
+                for col in display_df.columns:
+                    if col == "最新价":
+                        cols.append(f"{price_str:>10}")
+                    elif col == "涨跌幅":
+                        cols.append(f"{change_str:>10}")
+                    elif col == "成交额":
+                        cols.append(f"{amount_str:>10}")
+                    else:
+                        cols.append(f"{str(row.get(col, '')):>10}")
+
+                print("  ".join(cols))
+
             self._print_separator("=", 70)
 
         except Exception as e:
@@ -378,19 +471,34 @@ class ETFCLI:
             name = quote.get('name', '')
             print(f"\n  {self._COLOR_CYAN}{name}（{symbol}）实时行情：{self._COLOR_RESET}")
             self._print_separator("=", 48)
-            print(f"  最新价  | {quote.get('price', '—')}")
-            change_pct = quote.get('change_pct', '—')
-            colored_pct = self._color_value(change_pct) if change_pct != '—' else change_pct
+
+            prev_close = quote.get('prev_close', 0)
+
+            # 价格字段着色（与昨收价比较）
+            price = self._format_number(quote.get('price', 0), 3)
+            print(f"  最新价  | {self._color_compared_to(price, prev_close)}")
+
+            change_pct = self._format_number(quote.get('change_pct', 0), 2)
+            colored_pct = self._color_value(change_pct)
             print(f"  涨跌幅  | {colored_pct}%")
-            change_amt = quote.get('change_amt', '—')
-            colored_amt = self._color_value(change_amt) if change_amt != '—' else change_amt
+
+            change_amt = self._format_number(quote.get('change_amt', 0), 3)
+            colored_amt = self._color_value(change_amt)
             print(f"  涨跌额  | {colored_amt}")
-            print(f"  开盘价  | {quote.get('open', '—')}")
-            print(f"  最高价  | {quote.get('high', '—')}")
-            print(f"  最低价  | {quote.get('low', '—')}")
-            print(f"  昨收价  | {quote.get('prev_close', '—')}")
-            print(f"  成交量  | {quote.get('volume', '—')}")
-            print(f"  成交额  | {quote.get('amount', '—')}")
+
+            open_price = self._format_number(quote.get('open', 0), 3)
+            print(f"  开盘价  | {self._color_compared_to(open_price, prev_close)}")
+
+            high_price = self._format_number(quote.get('high', 0), 3)
+            print(f"  最高价  | {self._color_compared_to(high_price, prev_close)}")
+
+            low_price = self._format_number(quote.get('low', 0), 3)
+            print(f"  最低价  | {self._color_compared_to(low_price, prev_close)}")
+
+            print(f"  昨收价  | {self._format_number(prev_close, 3)}")
+
+            print(f"  成交量  | {self._format_volume(quote.get('volume', 0))}")
+            print(f"  成交额  | {self._format_volume(quote.get('amount', 0))}")
             self._print_separator("=", 48)
 
         except Exception as e:
@@ -436,13 +544,68 @@ class ETFCLI:
 
             # 显示前5条和后5条
             print("\n  前5条数据：")
-            print(df.head(5).to_string(index=False))
+            self._print_formatted_history(df.head(5))
             print("\n  后5条数据：")
-            print(df.tail(5).to_string(index=False))
+            self._print_formatted_history(df.tail(5))
 
         except Exception as e:
             print(f"  [错误] 获取历史数据失败: {e}")
             self.logger.error("获取历史数据失败: %s", e)
+
+    def _print_formatted_history(self, df):
+        """打印带颜色和单位的历史数据表格。
+
+        对涨跌幅列着色，对成交量/成交额列添加万/亿单位。
+
+        Args:
+            df (pandas.DataFrame): 历史数据DataFrame。
+        """
+        # 尝试匹配列名
+        change_col = self._match_column(df, ["涨跌幅", "涨跌幅度"])
+        volume_col = self._match_column(df, ["成交量"])
+        amount_col = self._match_column(df, ["成交额"])
+        change_amt_col = self._match_column(df, ["涨跌额"])
+
+        # 打印表头
+        print("  ".join(f"{col:>12}" for col in df.columns))
+
+        # 逐行打印
+        for _, row in df.iterrows():
+            cols = []
+            for col in df.columns:
+                val = row[col]
+                if col == change_col:
+                    # 涨跌幅着色
+                    formatted = self._format_number(val, 2)
+                    cols.append(f"{self._color_value(formatted):>12}")
+                elif col == change_amt_col:
+                    # 涨跌额着色
+                    formatted = self._format_number(val, 3)
+                    cols.append(f"{self._color_value(formatted):>12}")
+                elif col == volume_col or col == amount_col:
+                    # 成交量/成交额加单位
+                    cols.append(f"{self._format_volume(val):>12}")
+                elif isinstance(val, (int, float)):
+                    cols.append(f"{self._format_number(val, 3):>12}")
+                else:
+                    cols.append(f"{str(val):>12}")
+            print("  ".join(cols))
+
+    @staticmethod
+    def _match_column(df, candidates):
+        """在DataFrame列名中匹配候选列名。
+
+        Args:
+            df (pandas.DataFrame): 待搜索的DataFrame。
+            candidates (list): 候选列名列表。
+
+        Returns:
+            str or None: 匹配到的列名，未找到返回None。
+        """
+        for col in df.columns:
+            if col in candidates:
+                return col
+        return None
 
     def _fetch_holdings(self):
         """获取ETF持仓信息。

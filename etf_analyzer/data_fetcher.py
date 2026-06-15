@@ -36,6 +36,7 @@ class ETFDataFetcher:
         """
         self.logger = setup_logger("data_fetcher")
         self.cache_dir = CACHE_DIR_PATH
+        self._trade_calendar = None
         ensure_dirs()
         self.logger.info("ETFDataFetcher 初始化完成，缓存目录: %s", self.cache_dir)
 
@@ -136,14 +137,19 @@ class ETFDataFetcher:
         if end_date is None:
             end_date = datetime.now().strftime("%Y%m%d")
 
+        # 交易日自动调整：开始日期延顺到下一个交易日，结束日期回退到上一个交易日
+        adjusted_start = self._adjust_trading_day(start_date, mode="next")
+        adjusted_end = self._adjust_trading_day(end_date, mode="prev")
+
         self.logger.info(
             "开始获取ETF历史数据，代码: %s，起始: %s，结束: %s，复权: %s",
-            symbol, start_date, end_date, adjust,
+            symbol, adjusted_start, adjusted_end, adjust,
         )
 
-        # 尝试从缓存加载
+        # 尝试从缓存加载（使用调整后的日期作为缓存键）
         cache_key = self._get_cache_key(
-            symbol, "history", start_date=start_date, end_date=end_date, adjust=adjust,
+            symbol, "history",
+            start_date=adjusted_start, end_date=adjusted_end, adjust=adjust,
         )
         cached = self._load_cache(cache_key)
         if cached is not None:
@@ -154,8 +160,8 @@ class ETFDataFetcher:
             df = ak.fund_etf_hist_em(
                 symbol=symbol,
                 period="daily",
-                start_date=start_date,
-                end_date=end_date,
+                start_date=adjusted_start,
+                end_date=adjusted_end,
                 adjust=adjust,
             )
             if df is None or df.empty:
@@ -264,6 +270,68 @@ class ETFDataFetcher:
                 "获取ETF持仓信息失败，代码: %s，异常: %s", symbol, e,
             )
             return pd.DataFrame()
+
+    def _adjust_trading_day(self, date_str, mode="next"):
+        """调整日期至最近的交易日。
+
+        如果指定日期不是A股交易日，将其调整至最近的交易日。
+        - mode="next"：向前调整到下一个交易日（用于开始日期）
+        - mode="prev"：向后调整到上一个交易日（用于结束日期）
+
+        Args:
+            date_str (str): 日期字符串，格式 YYYYMMDD。
+            mode (str): 调整模式，"next" 或 "prev"，默认为 "next"。
+
+        Returns:
+            str: 调整后的日期字符串，格式 YYYYMMDD。
+        """
+        try:
+            # 首次调用时获取并缓存交易日历
+            if self._trade_calendar is None:
+                self._trade_calendar = ak.tool_trade_date_hist_sina()
+                self._trade_calendar["trade_date"] = pd.to_datetime(
+                    self._trade_calendar["trade_date"],
+                ).dt.date
+                self._trade_calendar = self._trade_calendar.sort_values("trade_date")
+                self.logger.info(
+                    "成功加载A股交易日历，共 %d 个交易日",
+                    len(self._trade_calendar),
+                )
+
+            target_date = pd.to_datetime(date_str).date()
+            trade_dates = self._trade_calendar["trade_date"].values
+
+            # 检查是否已是交易日
+            if target_date in trade_dates:
+                return date_str
+
+            if mode == "next":
+                # 查找下一个交易日（>= target_date）
+                mask = trade_dates >= target_date
+            else:
+                # 查找上一个交易日（<= target_date）
+                mask = trade_dates <= target_date
+
+            matched = trade_dates[mask]
+            if len(matched) == 0:
+                self.logger.warning(
+                    "未找到日期 %s 的%s交易日，使用原日期", date_str,
+                    "下一个" if mode == "next" else "上一个",
+                )
+                return date_str
+
+            adjusted = matched[0] if mode == "next" else matched[-1]
+            adjusted_str = adjusted.strftime("%Y%m%d")
+
+            self.logger.info(
+                "日期 %s 不是交易日，%s至 %s",
+                date_str, "延顺" if mode == "next" else "回退", adjusted_str,
+            )
+            return adjusted_str
+
+        except Exception as e:
+            self.logger.warning("交易日调整失败，使用原日期 %s，异常: %s", date_str, e)
+            return date_str
 
     def _get_cache_key(self, symbol, data_type, **kwargs):
         """生成缓存键（缓存文件路径）。
