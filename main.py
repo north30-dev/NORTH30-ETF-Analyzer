@@ -8,6 +8,7 @@ ETF分析工具命令行交互入口模块
 
 import re
 import os
+import subprocess
 from datetime import datetime
 
 from etf_analyzer.config import ensure_dirs, REPORT_DIR_PATH, DEFAULT_START_DATE
@@ -325,6 +326,114 @@ class ETFCLI:
             print("  [错误] 日期格式不正确，应为 YYYYMMDD 格式（如 20240101），请重新输入。")
 
     # ------------------------------------------------------------------
+    # Git前置检查和分支创建
+    # ------------------------------------------------------------------
+
+    def _git_preflight(self):
+        """执行Git前置检查和分支创建。
+
+        在CLI启动前自动执行：
+        1. 检查 git 命令是否可用
+        2. 从 origin/main 拉取最新代码
+        3. 基于 main 创建带时间戳的新本地分支
+        4. 验证分支创建成功
+
+        Returns:
+            bool: 分支创建成功返回 True，否则返回 False。
+        """
+        self.logger.info("开始Git前置检查")
+        print("\n  [Git] 正在检查Git环境...")
+        try:
+            subprocess.run(
+                ["git", "--version"],
+                capture_output=True, check=True, text=True,
+            )
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            print("  [警告] Git不可用，跳过分支创建。")
+            self.logger.warning("Git命令不可用，跳过Git前置检查")
+            return False
+
+        # 2. 检查当前是否在git仓库中
+        try:
+            result = subprocess.run(
+                ["git", "rev-parse", "--show-toplevel"],
+                capture_output=True, check=True, text=True,
+            )
+            repo_root = result.stdout.strip()
+            self.logger.info("Git仓库根目录: %s", repo_root)
+        except subprocess.CalledProcessError:
+            print("  [警告] 当前目录不在Git仓库中，跳过分支创建。")
+            self.logger.warning("不在Git仓库中，跳过Git前置检查")
+            return False
+
+        # 3. 从 origin/main 拉取最新代码
+        print("  [Git] 正在从 origin/main 拉取最新代码...")
+        try:
+            subprocess.run(
+                ["git", "fetch", "origin", "main"],
+                capture_output=True, check=True, text=True, timeout=60,
+            )
+            subprocess.run(
+                ["git", "checkout", "main"],
+                capture_output=True, check=True, text=True,
+            )
+            pull_result = subprocess.run(
+                ["git", "pull", "origin", "main"],
+                capture_output=True, check=True, text=True, timeout=60,
+            )
+            self.logger.info("Git拉取成功: %s", pull_result.stdout.strip())
+            print(f"  [Git] 拉取成功，已更新到最新 main 分支。")
+        except subprocess.TimeoutExpired:
+            print("  [警告] Git拉取超时，使用本地已有代码。")
+            self.logger.warning("Git拉取超时")
+        except subprocess.CalledProcessError as e:
+            print(f"  [警告] Git拉取失败: {e.stderr.strip()}")
+            print("  [提示] 将继续使用本地已有代码。")
+            self.logger.warning("Git拉取失败: %s", e.stderr.strip())
+        except Exception as e:
+            print(f"  [警告] Git操作异常: {e}")
+            self.logger.warning("Git操作异常: %s", e)
+
+        # 4. 创建带时间戳的新分支
+        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        branch_name = f"feat/plan-run-{timestamp}"
+        print(f"  [Git] 正在创建新分支: {branch_name} ...")
+        try:
+            # 确保在main上创建新分支
+            subprocess.run(
+                ["git", "checkout", "main"],
+                capture_output=True, check=True, text=True,
+            )
+            subprocess.run(
+                ["git", "checkout", "-b", branch_name],
+                capture_output=True, check=True, text=True,
+            )
+        except subprocess.CalledProcessError as e:
+            print(f"  [错误] 创建分支失败: {e.stderr.strip()}")
+            self.logger.error("创建分支失败: %s", e.stderr.strip())
+            return False
+
+        # 5. 验证分支创建成功
+        try:
+            verify = subprocess.run(
+                ["git", "branch", "--show-current"],
+                capture_output=True, check=True, text=True,
+            )
+            current_branch = verify.stdout.strip()
+            if current_branch == branch_name:
+                print(f"  [Git] 分支创建成功，当前分支: {branch_name}")
+                self.logger.info("分支创建成功: %s", branch_name)
+                return True
+            else:
+                print(f"  [错误] 分支验证失败，当前分支为: {current_branch}")
+                self.logger.error("分支验证失败，期望: %s，实际: %s", branch_name, current_branch)
+                return False
+        except subprocess.CalledProcessError as e:
+            print(f"  [错误] 分支验证失败: {e.stderr.strip()}")
+            self.logger.error("分支验证失败: %s", e.stderr.strip())
+            return False
+
+    # ------------------------------------------------------------------
     # 主运行循环
     # ------------------------------------------------------------------
 
@@ -335,6 +444,10 @@ class ETFCLI:
         直到用户选择退出为止。
         """
         self.logger.info("ETF分析工具启动")
+
+        # 执行Git前置检查（非阻塞）
+        self._git_preflight()
+        print()
         while True:
             self._print_separator()
             print("    ETF 分析工具 v1.0")
