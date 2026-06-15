@@ -34,6 +34,14 @@ class ETFCLI:
         logger: 日志记录器实例。
     """
 
+    # ANSI 颜色码
+    _COLOR_RED = "\033[91m"       # 红色 - 正值（中国金融惯例：涨=红）
+    _COLOR_GREEN = "\033[92m"     # 绿色 - 负值（中国金融惯例：跌=绿）
+    _COLOR_YELLOW = "\033[93m"    # 黄色 - 警告/中性值
+    _COLOR_CYAN = "\033[96m"      # 青色 - 标题/标签
+    _COLOR_BOLD = "\033[1m"       # 加粗
+    _COLOR_RESET = "\033[0m"      # 重置颜色
+
     # 主菜单选项映射
     MAIN_MENU = {
         "1": "数据获取",
@@ -125,6 +133,54 @@ class ETFCLI:
         for key, value in menu_dict.items():
             print(f"  {key}. {value}")
         print()
+
+    @staticmethod
+    def _color_value(value):
+        """根据数值正负返回带 ANSI 颜色的字符串。
+
+        中国金融行业惯例：正值（涨）显示红色，负值（跌）显示绿色。
+        零值或无法解析的非数值返回默认颜色。
+
+        Args:
+            value: 待着色的数值或字符串。
+
+        Returns:
+            str: 带 ANSI 颜色码的数值字符串（已包含重置码）。
+        """
+        try:
+            num = float(value)
+            if num > 0:
+                return f"{ETFCLI._COLOR_RED}{value}{ETFCLI._COLOR_RESET}"
+            elif num < 0:
+                return f"{ETFCLI._COLOR_GREEN}{value}{ETFCLI._COLOR_RESET}"
+            else:
+                return str(value)
+        except (ValueError, TypeError):
+            return str(value)
+
+    @staticmethod
+    def _format_number(value, decimals=4, as_percentage=False):
+        """格式化数值，消除科学计数法，按精度显示可读数字。
+
+        将科学计数法（如 1.23e-04）转为常规小数（0.0001），
+        避免 e 符号影响终端阅读体验。支持百分比和纯小数两种模式。
+
+        Args:
+            value: 数值或字符串。
+            decimals (int): 小数位数，默认为 4。
+            as_percentage (bool): 是否以百分比形式显示，
+                True 时会将数值乘以 100 并追加 %% 符号。
+
+        Returns:
+            str: 格式化后的数字字符串，不含科学计数法。
+        """
+        try:
+            num = float(value)
+            if as_percentage:
+                return f"{num * 100:.{decimals}f}%"
+            return f"{num:.{decimals}f}"
+        except (ValueError, TypeError):
+            return str(value)
 
     @staticmethod
     def _get_input(prompt):
@@ -296,9 +352,9 @@ class ETFCLI:
             display_df = df[available_cols].head(20)
 
             print(f"\n  共找到 {len(df)} 条记录，显示前 {min(20, len(df))} 条：")
-            self._print_separator("-", 70)
+            self._print_separator("=", 70)
             print(display_df.to_string(index=False))
-            self._print_separator("-", 70)
+            self._print_separator("=", 70)
 
         except Exception as e:
             print(f"  [错误] 查询ETF列表失败: {e}")
@@ -319,18 +375,23 @@ class ETFCLI:
                 print(f"  [提示] 未找到代码为 {symbol} 的ETF实时行情。")
                 return
 
-            print(f"\n  {quote['name']}（{symbol}）实时行情：")
-            self._print_separator("-", 40)
-            print(f"  最新价:     {quote.get('price', '—')}")
-            print(f"  涨跌幅:     {quote.get('change_pct', '—')}%")
-            print(f"  涨跌额:     {quote.get('change_amt', '—')}")
-            print(f"  开盘价:     {quote.get('open', '—')}")
-            print(f"  最高价:     {quote.get('high', '—')}")
-            print(f"  最低价:     {quote.get('low', '—')}")
-            print(f"  昨收价:     {quote.get('prev_close', '—')}")
-            print(f"  成交量:     {quote.get('volume', '—')}")
-            print(f"  成交额:     {quote.get('amount', '—')}")
-            self._print_separator("-", 40)
+            name = quote.get('name', '')
+            print(f"\n  {self._COLOR_CYAN}{name}（{symbol}）实时行情：{self._COLOR_RESET}")
+            self._print_separator("=", 48)
+            print(f"  最新价  | {quote.get('price', '—')}")
+            change_pct = quote.get('change_pct', '—')
+            colored_pct = self._color_value(change_pct) if change_pct != '—' else change_pct
+            print(f"  涨跌幅  | {colored_pct}%")
+            change_amt = quote.get('change_amt', '—')
+            colored_amt = self._color_value(change_amt) if change_amt != '—' else change_amt
+            print(f"  涨跌额  | {colored_amt}")
+            print(f"  开盘价  | {quote.get('open', '—')}")
+            print(f"  最高价  | {quote.get('high', '—')}")
+            print(f"  最低价  | {quote.get('low', '—')}")
+            print(f"  昨收价  | {quote.get('prev_close', '—')}")
+            print(f"  成交量  | {quote.get('volume', '—')}")
+            print(f"  成交额  | {quote.get('amount', '—')}")
+            self._print_separator("=", 48)
 
         except Exception as e:
             print(f"  [错误] 获取实时行情失败: {e}")
@@ -366,11 +427,11 @@ class ETFCLI:
                 print(f"  [提示] 未获取到代码为 {symbol} 的历史数据。")
                 return
 
-            print(f"\n  {symbol} 历史数据概况：")
-            self._print_separator("-", 50)
-            print(f"  数据条数:   {len(df)}")
-            print(f"  时间范围:   {start_date} ~ {end_date}")
-            print(f"  数据列:     {', '.join(df.columns.tolist())}")
+            print(f"\n  {self._COLOR_CYAN}{symbol} 历史数据概况：{self._COLOR_RESET}")
+            self._print_separator("=", 50)
+            print(f"  数据条数  | {len(df)}")
+            print(f"  时间范围  | {start_date} ~ {end_date}")
+            print(f"  数据列    | {', '.join(df.columns.tolist())}")
             self._print_separator("-", 50)
 
             # 显示前5条和后5条
@@ -398,10 +459,10 @@ class ETFCLI:
                 print(f"  [提示] 未获取到代码为 {symbol} 的持仓信息。")
                 return
 
-            print(f"\n  {symbol} 持仓信息（共 {len(df)} 条）：")
-            self._print_separator("-", 70)
+            print(f"\n  {self._COLOR_CYAN}{symbol} 持仓信息（共 {len(df)} 条）：{self._COLOR_RESET}")
+            self._print_separator("=", 70)
             print(df.head(20).to_string(index=False))
-            self._print_separator("-", 70)
+            self._print_separator("=", 70)
 
         except Exception as e:
             print(f"  [错误] 获取持仓信息失败: {e}")
@@ -467,12 +528,19 @@ class ETFCLI:
                 print(f"  [提示] 净值走势分析失败，未获取到有效数据。")
                 return
 
-            print(f"\n  {symbol} 净值走势分析结果：")
-            self._print_separator("-", 45)
-            print(f"  累计收益率:   {result['cumulative_return']:.2f}%")
-            print(f"  年化收益率:   {result['annualized_return']:.4f}")
-            print(f"  趋势判断:     {result['trend']}")
-            self._print_separator("-", 45)
+            print(f"\n  {self._COLOR_CYAN}{symbol} 净值走势分析结果：{self._COLOR_RESET}")
+            self._print_separator("=", 48)
+            cum_ret = result['cumulative_return']
+            ann_ret = result['annualized_return']
+            print(f"  累计收益率  | {self._color_value(self._format_number(cum_ret / 100, 2, as_percentage=True))}")
+            print(f"  年化收益率  | {self._color_value(self._format_number(ann_ret, 2, as_percentage=True))}")
+            trend_text = result['trend']
+            trend_colored = (f"{self._COLOR_RED}{trend_text}{self._COLOR_RESET}"
+                             if "上升" in trend_text else
+                             f"{self._COLOR_GREEN}{trend_text}{self._COLOR_RESET}"
+                             if "下降" in trend_text else trend_text)
+            print(f"  趋势判断    | {trend_colored}")
+            self._print_separator("=", 48)
 
         except Exception as e:
             print(f"  [错误] 净值走势分析失败: {e}")
@@ -496,12 +564,12 @@ class ETFCLI:
             top10 = result["top10_holdings"]
             concentration = result["concentration_ratio"]
 
-            print(f"\n  {symbol} 成分股构成分析结果：")
-            self._print_separator("-", 60)
-            print(f"  持仓集中度（前十大）: {concentration:.2f}%")
+            print(f"\n  {self._COLOR_CYAN}{symbol} 成分股构成分析结果：{self._COLOR_RESET}")
+            self._print_separator("=", 60)
+            print(f"  持仓集中度（前十大） | {self._format_number(concentration * 100, 1)}%")
             print(f"\n  前十大权重股：")
             print(top10.to_string(index=False))
-            self._print_separator("-", 60)
+            self._print_separator("=", 60)
 
         except Exception as e:
             print(f"  [错误] 成分股构成分析失败: {e}")
@@ -525,12 +593,12 @@ class ETFCLI:
             industry_dist = result["industry_distribution"]
             industry_count = result["industry_count"]
 
-            print(f"\n  {symbol} 行业分布统计结果：")
-            self._print_separator("-", 50)
-            print(f"  行业数量: {industry_count}")
+            print(f"\n  {self._COLOR_CYAN}{symbol} 行业分布统计结果：{self._COLOR_RESET}")
+            self._print_separator("=", 50)
+            print(f"  行业数量  | {industry_count}")
             print(f"\n  行业持仓占比：")
             print(industry_dist.to_string(index=False))
-            self._print_separator("-", 50)
+            self._print_separator("=", 50)
 
         except Exception as e:
             print(f"  [错误] 行业分布统计失败: {e}")
@@ -576,19 +644,22 @@ class ETFCLI:
                 print("  [提示] 风险指标计算失败，未获取到有效数据。")
                 return
 
-            print(f"\n  {symbol} 风险指标计算结果：")
-            self._print_separator("-", 50)
-            print(f"  日波动率:       {result['daily_volatility']:.6f}")
-            print(f"  年化波动率:     {result['annualized_volatility']:.4f}")
-            print(f"  最大回撤:       {result['max_drawdown']:.4f}")
-            print(f"  最大回撤起始:   {result['max_drawdown_start']}")
-            print(f"  最大回撤结束:   {result['max_drawdown_end']}")
-            print(f"  夏普比率:       {result['sharpe_ratio']:.4f}")
+            print(f"\n  {self._COLOR_CYAN}{symbol} 风险指标计算结果：{self._COLOR_RESET}")
+            self._print_separator("=", 55)
+            print(f"  日波动率         | {self._format_number(result['daily_volatility'], 6)}")
+            print(f"  年化波动率       | {self._format_number(result['annualized_volatility'], 4)}")
+            max_dd = result['max_drawdown']
+            print(f"  最大回撤         | {self._color_value(self._format_number(max_dd, 2, as_percentage=True))}")
+            print(f"  最大回撤起始     | {result['max_drawdown_start']}")
+            print(f"  最大回撤结束     | {result['max_drawdown_end']}")
+            sharpe = result['sharpe_ratio']
+            print(f"  夏普比率         | {self._color_value(self._format_number(sharpe, 4))}")
             if result["information_ratio"] is not None:
-                print(f"  信息比率:       {result['information_ratio']:.4f}")
+                ir = result['information_ratio']
+                print(f"  信息比率         | {self._color_value(self._format_number(ir, 4))}")
             else:
-                print("  信息比率:       未计算（未提供基准代码）")
-            self._print_separator("-", 50)
+                print("  信息比率         | 未计算（未提供基准代码）")
+            self._print_separator("=", 55)
 
         except Exception as e:
             print(f"  [错误] 风险指标计算失败: {e}")
@@ -626,13 +697,15 @@ class ETFCLI:
                 print("  [提示] 绩效分析失败，未获取到有效数据。")
                 return
 
-            print(f"\n  {symbol} 绩效分析结果（基准: {benchmark_symbol}）：")
-            self._print_separator("-", 50)
-            print(f"  超额收益:   {result['excess_return']:.2f}%")
-            print(f"  跟踪误差:   {result['tracking_error']:.4f}")
-            print(f"  信息比率:   {result['information_ratio']:.4f}")
-            print(f"  胜率:       {result['win_rate']:.4f}")
-            self._print_separator("-", 50)
+            print(f"\n  {self._COLOR_CYAN}{symbol} 绩效分析结果（基准: {benchmark_symbol}）：{self._COLOR_RESET}")
+            self._print_separator("=", 55)
+            excess_ret = result['excess_return']
+            print(f"  超额收益    | {self._color_value(self._format_number(excess_ret / 100, 2, as_percentage=True))}")
+            print(f"  跟踪误差    | {self._format_number(result['tracking_error'], 4)}")
+            ir = result['information_ratio']
+            print(f"  信息比率    | {self._color_value(self._format_number(ir, 4))}")
+            print(f"  胜率        | {self._format_number(result['win_rate'] * 100, 1)}%")
+            self._print_separator("=", 55)
 
         except Exception as e:
             print(f"  [错误] 绩效分析失败: {e}")
