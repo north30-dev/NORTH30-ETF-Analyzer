@@ -12,6 +12,7 @@ import pickle
 from datetime import datetime
 
 import akshare as ak
+import numpy as np
 import pandas as pd
 
 from etf_analyzer.config import CACHE_DIR_PATH, CACHE_EXPIRE_HOURS, DEFAULT_START_DATE, ensure_dirs
@@ -301,8 +302,9 @@ class ETFDataFetcher:
             target_date = pd.to_datetime(date_str).date()
             trade_dates = self._trade_calendar["trade_date"].values
 
-            # 检查是否已是交易日
-            if target_date in trade_dates:
+            # 检查是否已是交易日（使用二分查找，O(log n)）
+            idx = np.searchsorted(trade_dates, target_date)
+            if idx < len(trade_dates) and trade_dates[idx] == target_date:
                 return date_str
 
             if mode == "next":
