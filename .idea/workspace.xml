@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="40cf9e22-0a12-47da-91a5-b0e4cc58b7d1" name="Changes" comment="Built.">
-      <change beforePath="$PROJECT_DIR$/etf_analyzer/data_fetcher.py" beforeDir="false" afterPath="$PROJECT_DIR$/etf_analyzer/data_fetcher.py" afterDir="false" />
-    </list>
+    <list default="true" id="40cf9e22-0a12-47da-91a5-b0e4cc58b7d1" name="Changes" comment="Built." />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -29,7 +27,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "feat/cli-visual-optimization",
+    "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
     "nodejs_package_manager_path": "npm"
   }
@@ -105,7 +103,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="HEAD" />
+                        <option value="origin/main" />
                       </list>
                     </value>
                   </entry>
