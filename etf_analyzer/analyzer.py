@@ -16,6 +16,7 @@ from etf_analyzer.config import RISK_FREE_RATE, SW_INDUSTRY_MAP, ZX_INDUSTRY_MAP
 from etf_analyzer.logger import setup_logger
 from etf_analyzer.data_fetcher import ETFDataFetcher
 from etf_analyzer.data_processor import DataProcessor
+from etf_analyzer.retry import retry, rate_limiter
 
 
 class ETFAnalyzer:
@@ -701,7 +702,11 @@ class ETFAnalyzer:
         for _, row in df.iterrows():
             stock_code = str(row[code_col]).strip()
             try:
-                info = ak.stock_individual_info_em(symbol=stock_code)
+                @retry()
+                def _fetch_stock_info():
+                    rate_limiter.acquire()
+                    return ak.stock_individual_info_em(symbol=stock_code)
+                info = _fetch_stock_info()
                 if info is not None and not info.empty:
                     # 在返回的信息中查找行业
                     industry_row = info[
@@ -775,12 +780,16 @@ class ETFAnalyzer:
 
         # 尝试方法1：index_zh_a_hist
         try:
-            df = ak.index_zh_a_hist(
-                symbol=benchmark_symbol,
-                period="daily",
-                start_date=start_date,
-                end_date=end_date,
-            )
+            @retry()
+            def _fetch_benchmark_v1():
+                rate_limiter.acquire()
+                return ak.index_zh_a_hist(
+                    symbol=benchmark_symbol,
+                    period="daily",
+                    start_date=start_date,
+                    end_date=end_date,
+                )
+            df = _fetch_benchmark_v1()
             if df is not None and not df.empty:
                 self.logger.info(
                     "通过 index_zh_a_hist 获取基准数据成功，共 %d 条",
@@ -794,7 +803,11 @@ class ETFAnalyzer:
 
         # 尝试方法2：stock_zh_index_daily
         try:
-            df = ak.stock_zh_index_daily(symbol=f"sh{benchmark_symbol}")
+            @retry()
+            def _fetch_benchmark_v2():
+                rate_limiter.acquire()
+                return ak.stock_zh_index_daily(symbol=f"sh{benchmark_symbol}")
+            df = _fetch_benchmark_v2()
             if df is not None and not df.empty:
                 # 过滤日期范围
                 date_col = self._get_date_column(df)

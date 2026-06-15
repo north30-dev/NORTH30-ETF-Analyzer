@@ -17,6 +17,7 @@ import pandas as pd
 
 from etf_analyzer.config import CACHE_DIR_PATH, CACHE_EXPIRE_HOURS, DEFAULT_START_DATE, ensure_dirs
 from etf_analyzer.logger import setup_logger
+from etf_analyzer.retry import retry, rate_limiter
 
 
 class ETFDataFetcher:
@@ -72,7 +73,11 @@ class ETFDataFetcher:
         """
         self.logger.info("开始获取ETF实时行情，代码: %s", symbol)
         try:
-            df = ak.fund_etf_spot_em()
+            @retry()
+            def _fetch_spot():
+                rate_limiter.acquire()
+                return ak.fund_etf_spot_em()
+            df = _fetch_spot()
             if df is None or df.empty:
                 self.logger.warning("ak.fund_etf_spot_em() 返回空数据")
                 return {}
@@ -158,13 +163,17 @@ class ETFDataFetcher:
             return cached
 
         try:
-            df = ak.fund_etf_hist_em(
-                symbol=symbol,
-                period="daily",
-                start_date=adjusted_start,
-                end_date=adjusted_end,
-                adjust=adjust,
-            )
+            @retry()
+            def _fetch_history():
+                rate_limiter.acquire()
+                return ak.fund_etf_hist_em(
+                    symbol=symbol,
+                    period="daily",
+                    start_date=adjusted_start,
+                    end_date=adjusted_end,
+                    adjust=adjust,
+                )
+            df = _fetch_history()
             if df is None or df.empty:
                 self.logger.warning("ak.fund_etf_hist_em() 返回空数据，代码: %s", symbol)
                 return pd.DataFrame()
@@ -203,7 +212,11 @@ class ETFDataFetcher:
         """
         self.logger.info("开始获取ETF列表，关键词: %s", keyword)
         try:
-            df = ak.fund_etf_spot_em()
+            @retry()
+            def _fetch_list():
+                rate_limiter.acquire()
+                return ak.fund_etf_spot_em()
+            df = _fetch_list()
             if df is None or df.empty:
                 self.logger.warning("ak.fund_etf_spot_em() 返回空数据")
                 return pd.DataFrame()
@@ -252,7 +265,11 @@ class ETFDataFetcher:
             return cached
 
         try:
-            df = ak.fund_etf_hold_em(symbol=symbol, date=current_year)
+            @retry()
+            def _fetch_holdings():
+                rate_limiter.acquire()
+                return ak.fund_etf_hold_em(symbol=symbol, date=current_year)
+            df = _fetch_holdings()
             if df is None or df.empty:
                 self.logger.warning(
                     "ak.fund_etf_hold_em() 返回空数据，代码: %s", symbol,
@@ -289,7 +306,11 @@ class ETFDataFetcher:
         try:
             # 首次调用时获取并缓存交易日历
             if self._trade_calendar is None:
-                self._trade_calendar = ak.tool_trade_date_hist_sina()
+                @retry()
+                def _fetch_calendar():
+                    rate_limiter.acquire()
+                    return ak.tool_trade_date_hist_sina()
+                self._trade_calendar = _fetch_calendar()
                 self._trade_calendar["trade_date"] = pd.to_datetime(
                     self._trade_calendar["trade_date"],
                 ).dt.date
