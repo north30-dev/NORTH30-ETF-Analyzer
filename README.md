@@ -1,4 +1,4 @@
-# ETF Analyzer
+# NORTH30-ETF-Analyzer
 
 基于 [akshare](https://github.com/akfamily/akshare) 开发的命令行 ETF 分析工具，提供从数据获取、清洗、分析到可视化与报告生成的全链路能力。
 
@@ -70,8 +70,8 @@
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/your-username/etf-analyzer.git
-cd etf-analyzer
+git clone https://github.com/north30-dev/NORTH30-ETF-Analyzer.git
+cd NORTH30-ETF-Analyzer
 ```
 
 ### 2. 创建虚拟环境（推荐）
@@ -210,7 +210,7 @@ pytest tests/test_data_processor.py -v
 ## 项目目录
 
 ```
-ETF-Analyzer/
+NORTH30-ETF-Analyzer/
 ├── main.py                          # 命令行交互入口
 ├── requirements.txt                 # Python 依赖清单
 ├── .gitignore
@@ -273,5 +273,3 @@ ETF-Analyzer/
 - Commit 信息遵循 [Conventional Commits](https://www.conventionalcommits.org/) 规范
 
 ## 许可证
-
-[MIT](LICENSE)
