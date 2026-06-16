@@ -56,9 +56,13 @@ def setup_logger(name="etf_analyzer", level=None):
     formatter = logging.Formatter(LOG_FORMAT)
 
     # ---- 控制台输出 handler ----
+    # 显式指定 UTF-8 编码，避免 Windows 终端中文乱码
     console_handler = logging.StreamHandler()
     console_handler.setLevel(log_level)
     console_handler.setFormatter(formatter)
+    # 确保 StreamHandler 使用 UTF-8 编码输出
+    if hasattr(console_handler.stream, 'reconfigure'):
+        console_handler.stream.reconfigure(encoding='utf-8')
     logger.addHandler(console_handler)
 
     # ---- 文件输出 handler ----

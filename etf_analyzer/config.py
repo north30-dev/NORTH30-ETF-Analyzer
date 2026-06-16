@@ -8,6 +8,8 @@ ETF分析器全局配置模块
 
 import os
 
+from etf_analyzer.secure_config import secure_config
+
 # ============================================================
 # 缓存配置
 # ============================================================
@@ -149,6 +151,46 @@ LOG_DIR_PATH = os.path.join(PROJECT_ROOT, LOG_DIR)
 
 # 报告目录的绝对路径
 REPORT_DIR_PATH = os.path.join(PROJECT_ROOT, REPORT_DIR)
+
+# ============================================================
+# 数据源配置（从 secure_config 读取，提供默认值）
+# ============================================================
+
+# 数据源优先级列表，默认 ["akshare", "tushare", "baostock", "pytdx"]
+DATASOURCE_PRIORITY = [
+    s.strip()
+    for s in secure_config.get(
+        "DATASOURCE_PRIORITY", "akshare,tushare,baostock,pytdx"
+    ).split(",")
+    if s.strip()
+]
+
+# 数据源健康检查间隔（秒），默认 300
+DATASOURCE_HEALTH_CHECK_INTERVAL = int(
+    secure_config.get("DATASOURCE_HEALTH_CHECK_INTERVAL", "300")
+)
+
+# 数据源连续失败告警阈值，默认 3
+DATASOURCE_FAILURE_THRESHOLD = int(
+    secure_config.get("DATASOURCE_FAILURE_THRESHOLD", "3")
+)
+
+# 数据质量评分告警阈值，默认 60
+DATA_QUALITY_THRESHOLD = int(secure_config.get("DATA_QUALITY_THRESHOLD", "60"))
+
+# 交叉验证差异阈值（百分比），默认 1.0
+CROSS_VALIDATION_THRESHOLD = float(
+    secure_config.get("CROSS_VALIDATION_THRESHOLD", "1.0")
+)
+
+# Tushare 数据源 Token
+TUSHARE_TOKEN = secure_config.get("TUSHARE_TOKEN")
+
+# 通达信(pytdx)服务器地址，默认 "119.147.212.81"
+PYTDX_HOST = secure_config.get("PYTDX_HOST", "119.147.212.81")
+
+# 通达信(pytdx)服务器端口，默认 7709
+PYTDX_PORT = int(secure_config.get("PYTDX_PORT", "7709"))
 
 
 def ensure_dirs():

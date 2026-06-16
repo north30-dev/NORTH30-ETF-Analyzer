@@ -2,8 +2,9 @@
 """
 ETF数据获取模块
 
-本模块负责从数据源（akshare）获取ETF相关的行情数据、历史数据、
-ETF列表和持仓信息，并提供本地缓存机制以减少重复请求。
+本模块负责通过 DataSourceManager 从多个数据源获取ETF相关的行情数据、
+历史数据、ETF列表和持仓信息，并提供本地缓存机制以减少重复请求。
+对外接口保持与原版一致，内部使用 DataSourceManager 实现自动故障转移。
 """
 
 import os
@@ -11,20 +12,19 @@ import time
 import pickle
 from datetime import datetime
 
-import akshare as ak
 import numpy as np
 import pandas as pd
 
 from etf_analyzer.config import CACHE_DIR_PATH, CACHE_EXPIRE_HOURS, DEFAULT_START_DATE, ensure_dirs
+from etf_analyzer.data_source_manager import DataSourceManager
 from etf_analyzer.logger import setup_logger
-from etf_analyzer.retry import retry, rate_limiter
 
 
 class ETFDataFetcher:
     """ETF数据获取器，提供实时行情、历史数据、ETF列表及持仓信息的获取功能。
 
-    通过 akshare 接口获取数据，并支持基于文件的本地缓存机制，
-    缓存过期时间由 config.CACHE_EXPIRE_HOURS 控制。
+    通过 DataSourceManager 从多个数据源获取数据，支持自动故障转移，
+    并提供基于文件的本地缓存机制，缓存过期时间由 config.CACHE_EXPIRE_HOURS 控制。
 
     Attributes:
         logger: 日志记录器实例。
@@ -34,19 +34,24 @@ class ETFDataFetcher:
     def __init__(self):
         """初始化ETFDataFetcher实例。
 
-        设置日志记录器和缓存目录，并确保缓存目录存在。
+        设置日志记录器、缓存目录和 DataSourceManager，并确保缓存目录存在。
         """
         self.logger = setup_logger("data_fetcher")
         self.cache_dir = CACHE_DIR_PATH
         self._trade_calendar = None
         ensure_dirs()
+
+        # 初始化数据源管理器并注册所有可用数据源
+        self._source_manager = DataSourceManager()
+        self._source_manager.register_all()
+
         self.logger.info("ETFDataFetcher 初始化完成，缓存目录: %s", self.cache_dir)
 
     def get_realtime_quote(self, symbol):
         """获取指定ETF的实时行情数据。
 
-        通过 akshare 的 fund_etf_spot_em 接口获取全部ETF实时行情，
-        然后从中筛选出指定代码的数据。
+        通过 DataSourceManager 按优先级从各数据源获取实时行情，
+        不缓存实时数据。
 
         Args:
             symbol (str): ETF代码，如 "510300"。
@@ -72,50 +77,20 @@ class ETFDataFetcher:
             >>> print(quote["name"], quote["price"])
         """
         self.logger.info("开始获取ETF实时行情，代码: %s", symbol)
-        try:
-            @retry()
-            def _fetch_spot():
-                rate_limiter.acquire()
-                return ak.fund_etf_spot_em()
-            df = _fetch_spot()
-            if df is None or df.empty:
-                self.logger.warning("ak.fund_etf_spot_em() 返回空数据")
-                return {}
-
-            # 筛选指定代码的行
-            row = df[df["代码"] == symbol]
-            if row.empty:
-                self.logger.warning("未找到代码为 %s 的ETF数据", symbol)
-                return {}
-
-            row = row.iloc[0]
-            result = {
-                "symbol": symbol,
-                "name": str(row.get("名称", "")),
-                "price": float(row.get("最新价", 0)),
-                "change_pct": float(row.get("涨跌幅", 0)),
-                "change_amt": float(row.get("涨跌额", 0)),
-                "volume": float(row.get("成交量", 0)),
-                "amount": float(row.get("成交额", 0)),
-                "open": float(row.get("开盘价", 0)),
-                "high": float(row.get("最高价", 0)),
-                "low": float(row.get("最低价", 0)),
-                "prev_close": float(row.get("昨收", 0)),
-            }
+        result = self._source_manager.get_realtime_quote(symbol=symbol)
+        if result:
             self.logger.info(
                 "成功获取ETF %s(%s) 实时行情，最新价: %s",
-                symbol, result["name"], result["price"],
+                symbol, result.get("name", ""), result.get("price", 0),
             )
-            return result
-
-        except Exception as e:
-            self.logger.error("获取ETF实时行情失败，代码: %s，异常: %s", symbol, e)
-            return {}
+        else:
+            self.logger.error("获取ETF实时行情失败，代码: %s，所有数据源均不可用", symbol)
+        return result
 
     def get_history_data(self, symbol, start_date=None, end_date=None, adjust="qfq"):
         """获取ETF历史行情数据。
 
-        通过 akshare 的 fund_etf_hist_em 接口获取指定ETF的历史K线数据，
+        通过 DataSourceManager 按优先级从各数据源获取历史K线数据，
         并支持本地缓存机制以避免重复请求。
 
         Args:
@@ -162,39 +137,28 @@ class ETFDataFetcher:
             self.logger.info("从缓存加载ETF历史数据，代码: %s", symbol)
             return cached
 
-        try:
-            @retry()
-            def _fetch_history():
-                rate_limiter.acquire()
-                return ak.fund_etf_hist_em(
-                    symbol=symbol,
-                    period="daily",
-                    start_date=adjusted_start,
-                    end_date=adjusted_end,
-                    adjust=adjust,
-                )
-            df = _fetch_history()
-            if df is None or df.empty:
-                self.logger.warning("ak.fund_etf_hist_em() 返回空数据，代码: %s", symbol)
-                return pd.DataFrame()
+        # 通过 DataSourceManager 获取数据
+        df = self._source_manager.get_history_data(
+            symbol=symbol, start_date=adjusted_start, end_date=adjusted_end, adjust=adjust,
+        )
 
-            self.logger.info(
-                "成功获取ETF历史数据，代码: %s，共 %d 条记录", symbol, len(df),
-            )
-            # 保存到缓存
-            self._save_cache(cache_key, df)
-            return df
-
-        except Exception as e:
+        if df is None or (isinstance(df, pd.DataFrame) and df.empty):
             self.logger.error(
-                "获取ETF历史数据失败，代码: %s，异常: %s", symbol, e,
+                "获取ETF历史数据失败，代码: %s，所有数据源均不可用", symbol,
             )
             return pd.DataFrame()
+
+        self.logger.info(
+            "成功获取ETF历史数据，代码: %s，共 %d 条记录", symbol, len(df),
+        )
+        # 保存到缓存
+        self._save_cache(cache_key, df)
+        return df
 
     def get_etf_list(self, keyword=None):
         """获取ETF列表数据。
 
-        通过 akshare 的 fund_etf_spot_em 接口获取全部ETF实时行情列表，
+        通过 DataSourceManager 按优先级从各数据源获取ETF列表，
         可选按关键词对名称或代码进行过滤。
 
         Args:
@@ -211,36 +175,20 @@ class ETFDataFetcher:
             >>> print(df.head())
         """
         self.logger.info("开始获取ETF列表，关键词: %s", keyword)
-        try:
-            @retry()
-            def _fetch_list():
-                rate_limiter.acquire()
-                return ak.fund_etf_spot_em()
-            df = _fetch_list()
-            if df is None or df.empty:
-                self.logger.warning("ak.fund_etf_spot_em() 返回空数据")
-                return pd.DataFrame()
+        df = self._source_manager.get_etf_list(keyword=keyword)
 
-            # 如果提供了关键词，按名称或代码过滤
-            if keyword:
-                mask = df["名称"].str.contains(keyword, na=False) | df["代码"].str.contains(
-                    keyword, na=False,
-                )
-                df = df[mask]
-                self.logger.info("按关键词 '%s' 过滤后，剩余 %d 条记录", keyword, len(df))
-
-            self.logger.info("成功获取ETF列表，共 %d 条记录", len(df))
-            return df
-
-        except Exception as e:
-            self.logger.error("获取ETF列表失败，异常: %s", e)
+        if df is None or (isinstance(df, pd.DataFrame) and df.empty):
+            self.logger.error("获取ETF列表失败，所有数据源均不可用")
             return pd.DataFrame()
+
+        self.logger.info("成功获取ETF列表，共 %d 条记录", len(df))
+        return df
 
     def get_etf_holdings(self, symbol):
         """获取ETF成分股/持仓信息。
 
-        通过 akshare 的 fund_etf_hold_em 接口获取指定ETF的持仓数据，
-        日期参数使用当前年份。
+        通过 DataSourceManager 按优先级从各数据源获取持仓数据，
+        日期参数使用当前年份，并支持本地缓存。
 
         Args:
             symbol (str): ETF代码，如 "510300"。
@@ -264,30 +212,21 @@ class ETFDataFetcher:
             self.logger.info("从缓存加载ETF持仓信息，代码: %s", symbol)
             return cached
 
-        try:
-            @retry()
-            def _fetch_holdings():
-                rate_limiter.acquire()
-                return ak.fund_etf_hold_em(symbol=symbol, date=current_year)
-            df = _fetch_holdings()
-            if df is None or df.empty:
-                self.logger.warning(
-                    "ak.fund_etf_hold_em() 返回空数据，代码: %s", symbol,
-                )
-                return pd.DataFrame()
+        # 通过 DataSourceManager 获取数据
+        df = self._source_manager.get_etf_holdings(symbol=symbol)
 
-            self.logger.info(
-                "成功获取ETF持仓信息，代码: %s，共 %d 条记录", symbol, len(df),
-            )
-            # 保存到缓存
-            self._save_cache(cache_key, df)
-            return df
-
-        except Exception as e:
+        if df is None or (isinstance(df, pd.DataFrame) and df.empty):
             self.logger.error(
-                "获取ETF持仓信息失败，代码: %s，异常: %s", symbol, e,
+                "获取ETF持仓信息失败，代码: %s，所有数据源均不可用", symbol,
             )
             return pd.DataFrame()
+
+        self.logger.info(
+            "成功获取ETF持仓信息，代码: %s，共 %d 条记录", symbol, len(df),
+        )
+        # 保存到缓存
+        self._save_cache(cache_key, df)
+        return df
 
     def _adjust_trading_day(self, date_str, mode="next"):
         """调整日期至最近的交易日。
@@ -306,10 +245,14 @@ class ETFDataFetcher:
         try:
             # 首次调用时获取并缓存交易日历
             if self._trade_calendar is None:
+                import akshare as ak
+                from etf_analyzer.retry import retry, rate_limiter
+
                 @retry()
                 def _fetch_calendar():
                     rate_limiter.acquire()
                     return ak.tool_trade_date_hist_sina()
+
                 self._trade_calendar = _fetch_calendar()
                 self._trade_calendar["trade_date"] = pd.to_datetime(
                     self._trade_calendar["trade_date"],

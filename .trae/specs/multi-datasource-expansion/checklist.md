@@ -1,0 +1,27 @@
+- [x] SecureConfig 类可从 .env 文件和环境变量加载敏感配置
+- [x] SecureConfig 支持多环境（dev/test/prod）配置切换
+- [x] .env.example 模板文件包含所有需配置的敏感项，不含真实密钥
+- [x] .gitignore 正确排除 .env 及其变体文件
+- [x] config.py 整合 SecureConfig，无硬编码敏感信息
+- [x] BaseDataSource 抽象类定义了统一的数据源接口
+- [x] AkshareDataSource 正确实现 BaseDataSource 接口，行为与重构前一致
+- [x] TushareDataSource 通过 SecureConfig 获取 Token，可获取 ETF 数据
+- [x] BaostockDataSource 可获取历史K线数据，实时行情标记为不可用
+- [x] PytdxDataSource 可获取实时行情和历史数据
+- [x] DataSourceManager 支持数据源注册、优先级排序、自动故障转移
+- [x] 数据源健康检查机制可定期检测可用性和响应时间
+- [x] data_fetcher.py 对外接口保持不变，内部委托给 DataSourceManager
+- [x] 缺失数据智能填充算法可正确填充缺失数据点并标记来源
+- [x] 多源数据交叉验证可检测数据冲突并取中位数
+- [x] 数据质量评分机制可计算 0-100 评分
+- [x] 增量数据同步仅获取上次更新日期之后的新数据
+- [x] 定时任务自动更新可按配置计划执行
+- [x] 数据版本管理记录更新时间、数据源、记录数
+- [x] 数据源健康监控维护各数据源可用性和响应时间记录
+- [x] 异常自动告警在连续失败或质量评分低时记录 WARNING 日志
+- [x] 数据质量报告包含健康状态、完整性统计、补全记录、异常事件
+- [x] requirements.txt 包含 tushare、baostock、pytdx、python-dotenv 依赖
+- [x] 数据源抽象层单元测试通过（mock 各数据源接口）
+- [x] 数据源管理器单元测试通过（故障转移、优先级切换）
+- [x] 智能数据补全模块单元测试通过
+- [x] 安全配置管理模块单元测试通过
