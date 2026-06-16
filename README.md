@@ -1,6 +1,6 @@
 # NORTH30-ETF-Analyzer
 
-命令行 ETF 分析工具，支持多数据源获取、智能数据补全、增量更新与异常预警，提供从数据获取、清洗、分析到可视化与报告生成的全链路能力。
+全链路 ETF 分析平台，支持命令行（CLI）和 Web 可视化界面（Vue 3 + RESTful API）两种使用方式。提供多数据源获取、智能数据补全、增量更新与异常预警，以及从数据获取、清洗、分析到可视化与报告生成的全链路能力。
 
 ## 功能特性
 
@@ -10,7 +10,7 @@
 - **ETF列表** — 获取全市场 ETF 列表，支持按关键词搜索
 - **持仓信息** — 查询 ETF 成分股构成及持仓占比
 - **多数据源支持** — 支持 Akshare、Tushare、Baostock、通达信(pytdx) 四种数据源，按优先级自动切换与故障转移
-- **安全配置管理** — Token/API Key 通过 `.env` 文件管理，支持 dev/test/prod 多环境配置
+- **安全配置管理** — Token/API Key 通过 `.env` 文件管理，支持 dev/prod 多环境配置
 
 ### 智能数据补全
 - **缺失日期填充** — 自动检测并填充交易日历中的缺失日期，支持 interpolate/neighbor_mean 等方法
@@ -51,15 +51,27 @@
 - **PDF 报告** — 自动生成包含封面、目录、指标概览、图表和文字分析的 PDF
 - **自定义模块** — 按需选择报告包含的分析模块
 
+### Web 可视化界面（新增）
+- **RESTful API 服务** — 基于 FastAPI 提供 ETF 数据查询、分析计算、图表生成、报告生成等 RESTful 接口
+- **交互式图表** — 基于 ECharts 实现 K 线图、净值走势图等交互式图表，支持缩放与拖拽
+- **异步任务** — 基于 Celery + Redis 实现报告异步生成，支持任务进度查询
+- **数据库持久化** — 基于 SQLAlchemy + MySQL 实现 ETF 信息与历史数据持久化存储
+
 ## 技术栈
 
 | 组件 | 技术选型 |
 |------|---------|
 | 数据源 | [akshare](https://github.com/akfamily/akshare)、[tushare](https://tushare.pro/)、[baostock](http://baostock.com/)、[pytdx](https://github.com/rainx/pytdx) |
-| 配置管理 | [python-dotenv](https://github.com/theskumar/python-dotenv)（.env 多环境配置） |
+| 配置管理 | [Pydantic BaseSettings](https://docs.pydantic.dev/latest/) + YAML（多环境配置） |
 | 数据处理 | [pandas](https://pandas.pydata.org/)、[numpy](https://numpy.org/) |
-| 可视化 | [matplotlib](https://matplotlib.org/)、[mplfinance](https://github.com/matplotlib/mplfinance) |
+| 可视化（CLI） | [matplotlib](https://matplotlib.org/)、[mplfinance](https://github.com/matplotlib/mplfinance) |
 | 报告生成 | [reportlab](https://www.reportlab.com/)（PDF 生成） |
+| RESTful API | [FastAPI](https://fastapi.tiangolo.com/) + [Uvicorn](https://www.uvicorn.org/) |
+| 数据库 ORM | [SQLAlchemy 2.0](https://www.sqlalchemy.org/) + [PyMySQL](https://pypi.org/project/PyMySQL/) |
+| 异步任务 | [Celery](https://docs.celeryq.dev/) + [Redis](https://redis.io/) |
+| 前端框架 | [Vue 3](https://vuejs.org/) + [Vite](https://vitejs.dev/) |
+| UI 组件库 | [Element Plus](https://element-plus.org/) |
+| 交互式图表 | [ECharts](https://echarts.apache.org/) + [vue-echarts](https://github.com/ecomfe/vue-echarts) |
 | 测试框架 | [pytest](https://pytest.org/)、[pytest-cov](https://pytest-cov.readthedocs.io/) |
 
 ## 架构设计
@@ -67,23 +79,74 @@
 ```
 主入口层
   main.py              命令行交互入口（ETFCLI 类）
+  run.py               启动脚本（支持 api / celery 子命令）
       │
-模块层
-  ┌────────┬────────┬────────┬──────┬──────┐
-  │        │        │        │      │      │
-数据获取  数据处理  核心分析  可视化 报告生成
-  │
-  ├── data_source_manager.py   数据源管理器（注册/优先级/故障转移）
-  ├── data_sources/            数据源抽象层
+核心模块层 (etf_analyzer/)
+  ├── core/             核心分析模块
+  │   ├── analyzer.py          ETFAnalyzer（净值走势/风险指标/绩效分析）
+  │   ├── data_fetcher.py      ETFDataFetcher（数据获取调度）
+  │   ├── data_processor.py    DataProcessor（数据清洗/验证）
+  │   ├── visualizer.py        ETFVisualizer（图表生成）
+  │   └── report_generator.py  ReportGenerator（PDF报告生成）
+  ├── services/          服务层
+  │   ├── data_source_manager.py   数据源管理器（注册/优先级/故障转移）
+  │   ├── data_completion.py       智能数据补全（缺失填充/交叉验证/质量评分）
+  │   ├── incremental_updater.py   增量更新（版本管理/定时更新）
+  │   └── data_monitor.py          数据异常预警（健康检查/告警/质量报告）
+  ├── utils/             工具层
+  │   ├── logger.py          日志模块
+  │   ├── retry.py           重试装饰器
+  │   └── secure_config.py   安全配置管理（.env 多环境）
+  ├── data_sources/      数据源抽象层
   │   ├── base.py              抽象基类 BaseDataSource
   │   ├── akshare_source.py    Akshare 数据源
   │   ├── tushare_source.py    Tushare 数据源
   │   ├── baostock_source.py   Baostock 数据源
   │   └── pytdx_source.py      通达信数据源
-  ├── data_completion.py       智能数据补全（缺失填充/交叉验证/质量评分）
-  ├── incremental_updater.py   增量更新（版本管理/定时更新）
-  └── data_monitor.py          数据异常预警（健康检查/告警/质量报告）
-(config.py / logger.py / secure_config.py 为各模块共享)
+  └── __init__.py         延迟导入，旧式导入路径向后兼容
+
+配置层 (config/)
+  ├── __init__.py         统一配置入口（get_settings() 单例）
+  ├── settings.py         Pydantic BaseSettings 配置类
+  ├── default.yaml        默认配置文件（9大分类）
+  ├── development.yaml    开发环境覆盖配置
+  └── production.yaml     生产环境覆盖配置
+
+API 服务层 (api/)
+  ├── main.py             FastAPI 应用入口（CORS/路由/生命周期）
+  ├── deps.py             依赖注入（单例组件）
+  ├── routers/            API 路由
+  │   ├── etf.py          ETF 数据查询（列表/行情/历史/持仓）
+  │   ├── analysis.py     分析计算（净值/风险/绩效/行业分布）
+  │   ├── chart.py        图表生成（K线/净值/饼图/柱状图/回撤）
+  │   └── report.py       报告生成（Celery 异步任务）
+  └── schemas/            Pydantic 请求/响应模型
+      ├── etf.py
+      ├── analysis.py
+      └── report.py
+
+数据库层 (db/)
+  ├── database.py         SQLAlchemy 引擎与会话管理
+  ├── models.py           ORM 模型（ETFInfo / HistoryDataCache）
+  └── crud.py             CRUD 操作
+
+异步任务层 (tasks/)
+  ├── celery_app.py       Celery 应用配置
+  ├── report_tasks.py     异步报告生成任务（5步进度更新）
+  └── batch_tasks.py      批量分析任务
+
+前端层 (frontend/)
+  └── src/
+      ├── main.js         Vue 3 应用入口
+      ├── App.vue         布局框架
+      ├── router/         路由配置
+      ├── api/            Axios API 封装
+      └── views/          页面组件
+          ├── HomeView.vue      首页/概览
+          ├── ETFView.vue       ETF 搜索与列表
+          ├── AnalysisView.vue  净值走势与风险分析
+          ├── ChartsView.vue    交互式图表（ECharts）
+          └── ReportView.vue    报告生成与预览（PDF）
 ```
 
 各模块间通过类方法调用形成单向依赖链：
@@ -95,6 +158,9 @@
 ## 环境要求
 
 - Python 3.9+
+- Node.js 18+（前端开发）
+- MySQL 8.0+（可选，数据库持久化）
+- Redis 6.0+（可选，Celery 异步任务）
 - Windows / macOS / Linux
 - 网络连接（用于获取金融数据）
 
@@ -129,40 +195,48 @@ pip install -r requirements.txt
 # 复制环境配置模板
 cp .env.example .env
 
-# 编辑 .env 文件，填入必要的配置（如 Tushare Token）
+# 编辑 .env 文件，填入必要的配置（如 Tushare Token、数据库连接等）
 ```
 
 `.env` 配置项说明：
 
 | 配置项 | 必填 | 说明 |
 |--------|------|------|
-| `ETF_ENV` | 否 | 运行环境：dev / test / prod，默认 dev |
+| `ETF_ENV` | 否 | 运行环境：dev / prod，默认 dev |
 | `TUSHARE_TOKEN` | 否 | Tushare 数据源 Token，不配置则跳过该数据源 |
 | `PYTDX_HOST` | 否 | 通达信服务器地址，默认 `119.147.212.81` |
 | `PYTDX_PORT` | 否 | 通达信服务器端口，默认 `7709` |
-| `DATASOURCE_PRIORITY` | 否 | 数据源优先级，默认 `akshare,tushare,baostock,pytdx` |
-| `DATASOURCE_HEALTH_CHECK_INTERVAL` | 否 | 健康检查间隔（秒），默认 `300` |
-| `DATASOURCE_FAILURE_THRESHOLD` | 否 | 连续失败告警阈值，默认 `3` |
-| `DATA_QUALITY_THRESHOLD` | 否 | 质量评分告警阈值，默认 `60` |
-| `CROSS_VALIDATION_THRESHOLD` | 否 | 交叉验证差异阈值（%），默认 `1.0` |
+| `DB_HOST` | 否 | 数据库主机，默认 `localhost` |
+| `DB_PORT` | 否 | 数据库端口，默认 `3306` |
+| `DB_USER` | 否 | 数据库用户名 |
+| `DB_PASSWORD` | 否 | 数据库密码 |
+| `REDIS_HOST` | 否 | Redis 主机，默认 `127.0.0.1` |
+| `REDIS_PORT` | 否 | Redis 端口，默认 `6379` |
+| `REDIS_PASSWORD` | 否 | Redis 密码 |
 
 > Akshare 和 Baostock 无需 Token 即可使用；Tushare 需要在 `.env` 中配置 Token。
 
+### 5. 安装前端依赖（可选，Web 界面）
+
+```bash
+cd frontend
+npm install
+cd ..
+```
+
 ## 使用指南
 
-### 启动程序
+### 命令行模式 (CLI)
 
 ```bash
 python main.py
 ```
 
-### 基本操作流程
-
 程序启动后显示主菜单：
 
 ```
 ========================================
-    ETF 分析工具 v1.0
+    ETF 分析工具 v2.0
 ========================================
 1. 数据获取
 2. 数据分析
@@ -173,99 +247,81 @@ python main.py
 请选择操作（输入数字）:
 ```
 
-### 数据获取
+### Web 服务模式
 
-选择主菜单 **1. 数据获取** 进入数据获取子菜单：
+#### 启动 API 服务
 
-```
---- 数据获取 ---
-1. 查询ETF列表
-2. 获取实时行情
-3. 获取历史数据
-4. 获取持仓信息
-0. 返回主菜单
-```
+```bash
+# 方式一：使用启动脚本
+python run.py api
 
-- **查询ETF列表**：输入关键词（如"沪深300"）搜索，直接回车则列出所有 ETF
-- **获取实时行情**：输入 6 位 ETF 代码（如 `510300`）
-- **获取历史数据**：输入 ETF 代码 + 起始日期（YYYYMMDD）+ 结束日期
-- **获取持仓信息**：输入 ETF 代码
-
-### 数据分析
-
-选择主菜单 **2. 数据分析** 进入分析子菜单：
-
-```
---- 数据分析 ---
-1. 净值走势分析
-2. 成分股构成分析
-3. 行业分布统计
-4. 风险指标计算
-5. 绩效分析
-0. 返回主菜单
+# 方式二：直接使用 uvicorn
+uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-- **净值走势分析**：输入 ETF 代码，输出累计收益率、年化收益率、趋势判断
-- **成分股构成分析**：输入 ETF 代码，输出前十大权重股及持仓集中度
-- **行业分布统计**：输入 ETF 代码，选择行业分类标准（申万/中信）
-- **风险指标计算**：输入 ETF 代码，输出波动率、最大回撤、夏普比率等；可选输入基准代码计算信息比率
-- **绩效分析**：输入 ETF 代码 + 基准指数代码，输出超额收益、跟踪误差、胜率
+API 文档地址：`http://localhost:8000/docs`（Swagger UI）
 
-### 数据可视化
+#### 启动 Celery Worker（异步任务）
 
-选择主菜单 **3. 数据可视化** 进入可视化子菜单：
-
-```
---- 数据可视化 ---
-1. K线图
-2. 净值走势图
-3. 行业分布饼图
-4. 成分股权重柱状图
-5. 回撤曲线图
-0. 返回主菜单
+```bash
+python run.py celery
 ```
 
-每项功能输入 ETF 代码后即生成对应图表，自动保存至 `reports/` 目录，保存路径会显示在控制台中。
+#### 启动前端开发服务器
 
-### 报告生成
-
-选择主菜单 **4. 报告生成** 进入报告子菜单：
-
-```
---- 报告生成 ---
-1. 生成完整分析报告
-2. 生成自定义报告
-0. 返回主菜单
+```bash
+cd frontend
+npm run dev
 ```
 
-- **完整报告**：输入 ETF 代码，生成包含所有模块的分析报告
-- **自定义报告**：输入 ETF 代码后，按提示选择要包含的模块（净值走势、成分股、行业分布、风险指标、绩效分析）
+前端地址：`http://localhost:5173`
+
+#### API 路由概览
+
+| 路由 | 方法 | 说明 |
+|------|------|------|
+| `/api/v1/etf/list` | GET | ETF 列表查询 |
+| `/api/v1/etf/{symbol}/quote` | GET | 实时行情 |
+| `/api/v1/etf/{symbol}/history` | GET | 历史数据 |
+| `/api/v1/etf/{symbol}/holdings` | GET | 持仓信息 |
+| `/api/v1/analysis/nav-trend` | POST | 净值走势分析 |
+| `/api/v1/analysis/risk-metrics` | POST | 风险指标计算 |
+| `/api/v1/analysis/performance` | POST | 绩效分析 |
+| `/api/v1/analysis/holdings` | POST | 成分股分析 |
+| `/api/v1/analysis/industry-distribution` | POST | 行业分布统计 |
+| `/api/v1/chart/generate` | POST | 图表生成 |
+| `/api/v1/report/generate` | POST | 报告生成（异步） |
+| `/api/v1/report/task/{task_id}` | GET | 任务状态查询 |
 
 ### 常见操作示例
 
 ```bash
-# 启动程序
+# 启动 CLI 程序
 python main.py
 
-# 直接查看 ETF 最新行情（通过菜单操作）
-# 主菜单 → 1 → 2 → 输入 ETF 代码（如 510300）
+# 启动 API 服务
+python run.py api
 
-# 生成分析报告
-# 主菜单 → 4 → 1 → 输入 ETF 代码（如 510300）
-# 报告将生成到 reports/ 目录
+# 查看 API 文档
+# 浏览器打开 http://localhost:8000/docs
+
+# 生成 ETF 分析报告
+python main.py  # 菜单中选择 4 → 1 → 输入 ETF 代码（如 510300）
 ```
 
 ### 运行测试
 
 ```bash
-# 运行全部单元测试
+# 运行全部测试（含单元测试 + 集成测试）
 pytest tests/ -v
 
 # 运行带覆盖率的测试
 pytest tests/ -v --cov=etf_analyzer --cov-report=term-missing
 
 # 运行指定测试模块
-pytest tests/test_data_source_manager.py -v
+pytest tests/test_api.py -v
+pytest tests/test_database.py -v
+pytest tests/test_integration.py -v
 
 # 运行综合功能验证
 python tests/test_full_validation.py
@@ -276,79 +332,159 @@ python tests/test_full_validation.py
 ```
 NORTH30-ETF-Analyzer/
 ├── main.py                          # 命令行交互入口
+├── run.py                           # 启动脚本（api / celery 子命令）
 ├── requirements.txt                 # Python 依赖清单
 ├── .env.example                     # 环境配置模板
 ├── .gitignore
+├── config/                          # 统一配置管理
+│   ├── __init__.py                  # 配置入口（get_settings 单例）
+│   ├── settings.py                  # Pydantic BaseSettings 配置类
+│   ├── default.yaml                 # 默认配置（9大分类）
+│   ├── development.yaml             # 开发环境覆盖
+│   └── production.yaml              # 生产环境覆盖
 ├── etf_analyzer/                    # 核心模块包
-│   ├── __init__.py
-│   ├── config.py                    # 全局配置
-│   ├── logger.py                    # 日志模块
-│   ├── secure_config.py             # 安全配置管理（.env 多环境）
-│   ├── data_fetcher.py              # 数据获取（委托 DataSourceManager）
-│   ├── data_source_manager.py       # 数据源管理器（注册/优先级/故障转移）
+│   ├── __init__.py                  # 延迟导入，向后兼容
+│   ├── core/                        # 核心分析模块
+│   │   ├── __init__.py
+│   │   ├── analyzer.py              # 核心分析（净值/风险/绩效）
+│   │   ├── data_fetcher.py          # 数据获取调度
+│   │   ├── data_processor.py        # 数据处理（清洗/验证）
+│   │   ├── visualizer.py            # 图表生成
+│   │   └── report_generator.py      # PDF 报告生成
+│   ├── services/                    # 服务层
+│   │   ├── __init__.py
+│   │   ├── data_source_manager.py   # 数据源管理器
+│   │   ├── data_completion.py       # 智能数据补全
+│   │   ├── incremental_updater.py   # 增量更新
+│   │   └── data_monitor.py          # 数据异常预警
+│   ├── utils/                       # 工具层
+│   │   ├── __init__.py
+│   │   ├── logger.py                # 日志模块
+│   │   ├── retry.py                 # 重试装饰器
+│   │   └── secure_config.py         # 安全配置管理
 │   ├── data_sources/                # 数据源抽象层
 │   │   ├── __init__.py
-│   │   ├── base.py                  # 抽象基类 BaseDataSource
+│   │   ├── base.py                  # 抽象基类
 │   │   ├── akshare_source.py        # Akshare 数据源
 │   │   ├── tushare_source.py        # Tushare 数据源
 │   │   ├── baostock_source.py       # Baostock 数据源
 │   │   └── pytdx_source.py          # 通达信数据源
-│   ├── data_completion.py           # 智能数据补全
-│   ├── incremental_updater.py       # 增量更新
-│   ├── data_monitor.py              # 数据异常预警
-│   ├── data_processor.py            # 数据处理
-│   ├── analyzer.py                  # 核心分析
-│   ├── visualizer.py                # 可视化
-│   ├── report_generator.py          # 报告生成
-│   └── retry.py                     # 重试装饰器
-├── tests/                           # 单元测试
+│   ├── analyzer.py                  # [兼容层] → core.analyzer
+│   ├── data_fetcher.py              # [兼容层] → core.data_fetcher
+│   ├── data_processor.py            # [兼容层] → core.data_processor
+│   ├── visualizer.py                # [兼容层] → core.visualizer
+│   ├── report_generator.py          # [兼容层] → core.report_generator
+│   ├── data_source_manager.py       # [兼容层] → services.data_source_manager
+│   ├── data_completion.py           # [兼容层] → services.data_completion
+│   ├── incremental_updater.py       # [兼容层] → services.incremental_updater
+│   ├── data_monitor.py              # [兼容层] → services.data_monitor
+│   ├── secure_config.py             # [兼容层] → utils.secure_config
+│   ├── logger.py                    # [兼容层] → utils.logger
+│   └── retry.py                     # [兼容层] → utils.retry
+├── api/                             # RESTful API 服务
+│   ├── main.py                      # FastAPI 应用入口
+│   ├── deps.py                      # 依赖注入
+│   ├── routers/
+│   │   ├── etf.py                   # ETF 数据查询
+│   │   ├── analysis.py              # 分析计算
+│   │   ├── chart.py                 # 图表生成
+│   │   └── report.py                # 报告生成（异步）
+│   └── schemas/
+│       ├── etf.py                   # ETF 请求/响应模型
+│       ├── analysis.py              # 分析请求/响应模型
+│       └── report.py                # 报告请求/响应模型
+├── db/                              # 数据库持久化层
+│   ├── database.py                  # SQLAlchemy 引擎与会话管理
+│   ├── models.py                    # ORM 模型
+│   └── crud.py                      # CRUD 操作
+├── tasks/                           # Celery 异步任务
+│   ├── celery_app.py                # Celery 应用配置
+│   ├── report_tasks.py              # 异步报告生成
+│   └── batch_tasks.py               # 批量分析
+├── frontend/                        # Vue 3 前端（Web 界面）
+│   ├── package.json
+│   ├── vite.config.js               # Vite 配置（含 API 代理）
+│   ├── index.html
+│   └── src/
+│       ├── main.js                  # 应用入口
+│       ├── App.vue                  # 布局框架
+│       ├── router/index.js          # 路由配置
+│       ├── api/index.js             # Axios API 封装
+│       └── views/
+│           ├── HomeView.vue         # 首页概览
+│           ├── ETFView.vue          # ETF 搜索与列表
+│           ├── AnalysisView.vue     # 分析看板
+│           ├── ChartsView.vue       # 交互式图表
+│           └── ReportView.vue       # 报告生成与预览
+├── tests/                           # 测试
 │   ├── __init__.py
 │   ├── conftest.py                  # 测试 fixtures
+│   ├── test_settings.py             # 配置系统测试
 │   ├── test_secure_config.py        # 安全配置测试
-│   ├── test_data_sources.py         # 数据源抽象层测试
+│   ├── test_data_sources.py         # 数据源测试
 │   ├── test_data_source_manager.py  # 数据源管理器测试
-│   ├── test_data_completion.py      # 智能数据补全测试
+│   ├── test_data_completion.py      # 数据补全测试
 │   ├── test_data_fetcher.py         # 数据获取测试
 │   ├── test_data_processor.py       # 数据处理测试
 │   ├── test_analyzer.py             # 核心分析测试
-│   └── test_full_validation.py      # 综合功能验证脚本
+│   ├── test_database.py             # 数据库层测试
+│   ├── test_api.py                  # API 路由测试
+│   ├── test_celery_tasks.py         # Celery 任务测试
+│   ├── test_integration.py          # 端到端集成测试
+│   └── test_full_validation.py      # 综合功能验证
 ├── cache/                           # 数据缓存（运行时创建）
 ├── logs/                            # 日志文件（运行时创建）
-└── reports/                         # 报告输出（运行时创建）
+├── reports/                         # 报告输出（运行时创建）
+└── charts/                          # 图表输出（运行时创建）
 ```
 
 ## 配置文件说明
 
-### 代码配置（config.py）
+### 统一配置系统（config/）
 
-[config.py](etf_analyzer/config.py) 包含所有可自定义的全局配置项：
+项目采用基于 Pydantic BaseSettings + YAML 的分层配置架构：
 
-| 配置项 | 默认值 | 说明 |
-|--------|--------|------|
-| `CACHE_DIR` | `"cache"` | 数据缓存目录 |
-| `CACHE_EXPIRE_HOURS` | `4` | 缓存过期时间（小时） |
-| `DEFAULT_START_DATE` | `"20200101"` | 默认数据起始日期 |
-| `RISK_FREE_RATE` | `0.02` | 无风险利率（2%） |
-| `SW_INDUSTRY_MAP` | 28个行业 | 申万一级行业分类映射 |
-| `ZX_INDUSTRY_MAP` | 30个行业 | 中信一级行业分类映射 |
-| `REPORT_DIR` | `"reports"` | 报告输出目录 |
-| `LOG_LEVEL` | `"INFO"` | 日志级别 |
-| `DATASOURCE_PRIORITY` | `["akshare","tushare","baostock","pytdx"]` | 数据源优先级 |
-| `DATASOURCE_HEALTH_CHECK_INTERVAL` | `300` | 健康检查间隔（秒） |
-| `DATASOURCE_FAILURE_THRESHOLD` | `3` | 连续失败告警阈值 |
-| `DATA_QUALITY_THRESHOLD` | `60` | 质量评分告警阈值 |
-| `CROSS_VALIDATION_THRESHOLD` | `1.0` | 交叉验证差异阈值（%） |
+**配置优先级（从高到低）**：
+1. 环境变量（如 `DB_HOST=localhost`）
+2. `.env` 文件（敏感信息，不纳入版本管理）
+3. `config/production.yaml` 或 `config/development.yaml`（环境特定配置）
+4. `config/default.yaml`（默认配置，所有环境共享）
+
+**配置分类（default.yaml）**：
+
+| 分类 | 说明 |
+|------|------|
+| server | API 服务配置（host、port、cors_origins、debug） |
+| database | 数据库连接（host、port、name、user、password、pool_size） |
+| redis | Redis 连接（host、port、db、password） |
+| celery | Celery 异步任务（broker_url、result_backend、worker_concurrency） |
+| datasource | 数据源配置（priority、health_check_interval、failure_threshold） |
+| analysis | 分析参数（default_start_date、risk_free_rate） |
+| report | 报告配置（font、font_size、title_font_size） |
+| cache | 缓存配置（dir_path、expire_hours） |
+| logging | 日志配置（level、format、dir_path） |
+
+**配置加载方式**：
+
+```python
+from config import get_settings
+
+settings = get_settings()
+
+# 读取配置
+db_url = settings.database.url
+redis_url = settings.redis.url
+api_port = settings.server.port
+```
 
 ### 环境配置（.env）
 
 通过 `.env` 文件管理敏感信息，支持多环境配置：
 
-- `.env` — 基础配置（所有环境共享）
-- `.env.dev` — 开发环境覆盖
-- `.env.test` — 测试环境覆盖
-- `.env.prod` — 生产环境覆盖
+- `.env` — 敏感配置（已加入 `.gitignore`，不提交）
+- `.env.example` — 配置模板（提交到仓库）
 
-通过 `ETF_ENV` 环境变量切换当前运行环境，环境特定配置会覆盖基础配置。
+通过 `ETF_ENV` 环境变量切换当前运行环境（dev / prod）。
 
 ## 贡献指南
 
@@ -367,12 +503,12 @@ NORTH30-ETF-Analyzer/
 5. 提交 Pull Request
 
 ### 开发规范
-- 遵循 [PEP 8](https://peps.python.org/pep-0008/) 编码规范
+- 遵循 [PEP 8](https://pep8.org/) 编码规范
 - 所有函数和类需包含详细的中文文档字符串
 - 添加必要的异常处理和日志记录
 - 为核心逻辑编写单元测试
 - Commit 信息遵循 [Conventional Commits](https://www.conventionalcommits.org/) 规范
-- 敏感信息（Token、API Key）必须通过 `.env` 文件管理，不得硬编码
+- 敏感信息（Token、API Key、数据库密码）必须通过 `.env` 文件管理，不得硬编码
 
 ## 许可证
 MIT
