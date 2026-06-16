@@ -1,37 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="40cf9e22-0a12-47da-91a5-b0e4cc58b7d1" name="Changes" comment="Built.">
-      <change beforePath="$PROJECT_DIR$/.env.example" beforeDir="false" afterPath="$PROJECT_DIR$/.env.example" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etf_analyzer/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/etf_analyzer/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etf_analyzer/analyzer.py" beforeDir="false" afterPath="$PROJECT_DIR$/etf_analyzer/core/analyzer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etf_analyzer/config.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/etf_analyzer/data_completion.py" beforeDir="false" afterPath="$PROJECT_DIR$/etf_analyzer/services/data_completion.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etf_analyzer/data_fetcher.py" beforeDir="false" afterPath="$PROJECT_DIR$/etf_analyzer/core/data_fetcher.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etf_analyzer/data_monitor.py" beforeDir="false" afterPath="$PROJECT_DIR$/etf_analyzer/services/data_monitor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etf_analyzer/data_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/etf_analyzer/core/data_processor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etf_analyzer/data_source_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/etf_analyzer/services/data_source_manager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etf_analyzer/data_sources/akshare_source.py" beforeDir="false" afterPath="$PROJECT_DIR$/etf_analyzer/data_sources/akshare_source.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etf_analyzer/data_sources/baostock_source.py" beforeDir="false" afterPath="$PROJECT_DIR$/etf_analyzer/data_sources/baostock_source.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etf_analyzer/data_sources/pytdx_source.py" beforeDir="false" afterPath="$PROJECT_DIR$/etf_analyzer/data_sources/pytdx_source.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etf_analyzer/data_sources/tushare_source.py" beforeDir="false" afterPath="$PROJECT_DIR$/etf_analyzer/data_sources/tushare_source.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etf_analyzer/incremental_updater.py" beforeDir="false" afterPath="$PROJECT_DIR$/etf_analyzer/services/incremental_updater.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etf_analyzer/logger.py" beforeDir="false" afterPath="$PROJECT_DIR$/etf_analyzer/utils/logger.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etf_analyzer/report_generator.py" beforeDir="false" afterPath="$PROJECT_DIR$/etf_analyzer/core/report_generator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etf_analyzer/retry.py" beforeDir="false" afterPath="$PROJECT_DIR$/etf_analyzer/utils/retry.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etf_analyzer/secure_config.py" beforeDir="false" afterPath="$PROJECT_DIR$/etf_analyzer/utils/secure_config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/etf_analyzer/visualizer.py" beforeDir="false" afterPath="$PROJECT_DIR$/etf_analyzer/core/visualizer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_analyzer.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_analyzer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_data_completion.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_data_completion.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_data_fetcher.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_data_fetcher.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_data_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_data_processor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_data_source_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_data_source_manager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_full_validation.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_full_validation.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_secure_config.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_secure_config.py" afterDir="false" />
-    </list>
+    <list default="true" id="40cf9e22-0a12-47da-91a5-b0e4cc58b7d1" name="Changes" comment="Built." />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -149,7 +119,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="HEAD" />
+                        <option value="origin/main" />
                       </list>
                     </value>
                   </entry>
