@@ -1,0 +1,40 @@
+- [x] config/default.yaml 包含所有配置项分类及注释说明
+- [x] config/development.yaml 和 config/production.yaml 环境配置文件存在且可加载
+- [x] Settings 类基于 Pydantic BaseSettings 实现，支持 YAML 加载、环境变量覆盖、.env 敏感信息读取
+- [x] get_settings() 返回全局配置单例，多次调用返回同一实例
+- [x] 配置验证可检测类型不匹配和必需项缺失
+- [x] .env.example 包含数据库、Redis、Celery、API服务相关敏感配置项
+- [x] etf_analyzer/core/ 包含 analyzer、data_fetcher、data_processor、visualizer、report_generator
+- [x] etf_analyzer/services/ 包含 data_source_manager、data_completion、incremental_updater、data_monitor
+- [x] etf_analyzer/utils/ 包含 logger、retry、secure_config
+- [x] etf_analyzer/data_sources/ 保持现有结构不变
+- [x] etf_analyzer/__init__.py 重新导出核心类，旧式导入路径向后兼容
+- [x] main.py CLI入口适配新目录结构和配置系统
+- [x] tests/ 下所有测试文件导入路径已更新
+- [x] 旧 config.py 已删除，所有引用已迁移至 config/settings.py
+- [x] db/database.py 实现 SQLAlchemy 引擎和会话管理，支持连接池
+- [x] db/models.py 定义 ETFInfo 和 HistoryDataCache 模型
+- [x] db/crud.py 实现 ETF 信息和历史数据的 CRUD 操作
+- [x] 数据库首次启动时自动创建所需表结构
+- [x] 数据库层单元测试通过（使用 SQLite 内存数据库）
+- [x] FastAPI 应用实例创建，配置 CORS 和路由挂载
+- [x] Pydantic schemas 定义 ETF、分析、报告的请求/响应模型
+- [x] ETF 数据查询 API（列表、实时行情、历史数据、持仓信息）可正常响应
+- [x] 分析计算 API（净值走势、风险指标、绩效分析）可正常响应
+- [x] 图表生成 API 可生成图表并返回图片 URL
+- [x] 报告生成 API 创建异步任务并返回任务 ID
+- [x] 报告任务状态查询 API 可返回任务状态和进度
+- [x] /docs 路径可访问 Swagger UI 格式的 API 文档
+- [x] API 路由单元测试通过
+- [x] Celery 应用配置正确，可连接 broker 和 backend
+- [x] 异步报告生成任务可正常执行
+- [x] 批量分析任务可正常执行
+- [x] Celery 任务单元测试通过
+- [x] Vue 3 前端项目初始化完成，可正常启动开发服务器
+- [x] ETF 搜索与列表展示页面可正常显示数据
+- [x] 实时行情看板页面可正常显示行情指标
+- [x] 交互式图表页面支持缩放和拖拽
+- [x] 分析报告在线预览页面可正常显示和下载
+- [x] requirements.txt 包含所有新增依赖
+- [x] run.py 启动脚本可一键启动 API 服务和 Celery Worker
+- [x] 端到端集成测试通过，API、数据库、异步任务、前端联动正常

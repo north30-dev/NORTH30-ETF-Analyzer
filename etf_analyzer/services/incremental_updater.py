@@ -13,8 +13,8 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 
-from etf_analyzer.config import CACHE_DIR_PATH, DEFAULT_START_DATE, ensure_dirs
-from etf_analyzer.logger import setup_logger
+from config import CACHE_DIR_PATH, DEFAULT_START_DATE, ensure_dirs
+from etf_analyzer.utils.logger import setup_logger
 
 
 class IncrementalUpdater:
@@ -39,7 +39,7 @@ class IncrementalUpdater:
         self.logger = setup_logger("incremental_updater")
 
         if fetcher is None:
-            from etf_analyzer.data_fetcher import ETFDataFetcher
+            from etf_analyzer.core.data_fetcher import ETFDataFetcher
             self.fetcher = ETFDataFetcher()
         else:
             self.fetcher = fetcher

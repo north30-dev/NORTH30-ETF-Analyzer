@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from etf_analyzer.analyzer import ETFAnalyzer
+from etf_analyzer.core.analyzer import ETFAnalyzer
 
 
 class TestETFAnalyzer:

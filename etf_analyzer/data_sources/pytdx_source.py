@@ -11,9 +11,9 @@ from datetime import datetime
 
 import pandas as pd
 
-from etf_analyzer.config import PYTDX_HOST, PYTDX_PORT
+from config import PYTDX_HOST, PYTDX_PORT
 from etf_analyzer.data_sources.base import BaseDataSource
-from etf_analyzer.logger import setup_logger
+from etf_analyzer.utils.logger import setup_logger
 
 # pytdx 列名到标准列名的映射
 _COLUMN_MAP = {

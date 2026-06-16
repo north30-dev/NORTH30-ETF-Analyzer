@@ -9,8 +9,8 @@ ETF数据智能补全模块
 import numpy as np
 import pandas as pd
 
-from etf_analyzer import config
-from etf_analyzer.logger import setup_logger
+from config import CROSS_VALIDATION_THRESHOLD
+from etf_analyzer.utils.logger import setup_logger
 
 
 class DataCompletion:
@@ -294,7 +294,7 @@ class DataCompletion:
 
         try:
             if threshold is None:
-                threshold = config.CROSS_VALIDATION_THRESHOLD
+                threshold = CROSS_VALIDATION_THRESHOLD
 
             self.logger.info(
                 "开始多源数据交叉验证，数据源: %s，差异阈值: %.2f%%",

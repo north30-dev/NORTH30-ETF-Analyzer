@@ -28,15 +28,15 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 
-from etf_analyzer.config import (
+from config import (
     REPORT_DIR_PATH,
     REPORT_FONT,
     REPORT_FONT_SIZE,
     REPORT_TITLE_FONT_SIZE,
     ensure_dirs,
 )
-from etf_analyzer.logger import setup_logger
-from etf_analyzer.visualizer import ETFVisualizer
+from etf_analyzer.utils.logger import setup_logger
+from etf_analyzer.core.visualizer import ETFVisualizer
 
 logger = setup_logger("report_generator")
 

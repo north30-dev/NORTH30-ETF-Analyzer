@@ -9,7 +9,7 @@ ETF数据处理模块
 import numpy as np
 import pandas as pd
 
-from etf_analyzer.logger import setup_logger
+from etf_analyzer.utils.logger import setup_logger
 
 
 class DataProcessor:

@@ -1,0 +1,12 @@
+server:
+  debug: true
+  cors_origins:
+    - "http://localhost:5173"
+    - "http://localhost:3000"
+
+database:
+  host: "127.0.0.1"
+  name: "etf_analyzer_dev"
+
+logging:
+  level: "DEBUG"

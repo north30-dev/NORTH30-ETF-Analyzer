@@ -12,11 +12,11 @@ import pandas as pd
 
 import akshare as ak
 
-from etf_analyzer.config import RISK_FREE_RATE, SW_INDUSTRY_MAP, ZX_INDUSTRY_MAP
-from etf_analyzer.logger import setup_logger
-from etf_analyzer.data_fetcher import ETFDataFetcher
-from etf_analyzer.data_processor import DataProcessor
-from etf_analyzer.retry import retry, rate_limiter
+from config import RISK_FREE_RATE, SW_INDUSTRY_MAP, ZX_INDUSTRY_MAP
+from etf_analyzer.utils.logger import setup_logger
+from etf_analyzer.core.data_fetcher import ETFDataFetcher
+from etf_analyzer.core.data_processor import DataProcessor
+from etf_analyzer.utils.retry import retry, rate_limiter
 
 
 class ETFAnalyzer:

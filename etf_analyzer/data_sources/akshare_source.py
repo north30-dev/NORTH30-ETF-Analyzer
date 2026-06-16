@@ -13,10 +13,10 @@ import akshare as ak
 import numpy as np
 import pandas as pd
 
-from etf_analyzer.config import DEFAULT_START_DATE
+from config import DEFAULT_START_DATE
 from etf_analyzer.data_sources.base import BaseDataSource
-from etf_analyzer.logger import setup_logger
-from etf_analyzer.retry import retry, rate_limiter
+from etf_analyzer.utils.logger import setup_logger
+from etf_analyzer.utils.retry import retry, rate_limiter
 
 
 class AkshareDataSource(BaseDataSource):

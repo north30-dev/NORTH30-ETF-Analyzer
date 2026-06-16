@@ -1,0 +1,26 @@
+- [ ] etf_analyzer/__init__.py 重新导出所有核心类和函数（ETFAnalyzer, ETFDataFetcher, DataProcessor, ETFVisualizer, ReportGenerator, DataSourceManager, DataCompletion, IncrementalUpdater, DataMonitor, setup_logger, SecureConfig, secure_config 等）
+- [ ] core/__init__.py 重新导出 core 子包的公开接口
+- [ ] services/__init__.py 重新导出 services 子包的公开接口
+- [ ] utils/__init__.py 重新导出 utils 子包的公开接口
+- [ ] 旧文件位置 analyzer.py 兼容层创建并正确重导出
+- [ ] 旧文件位置 data_fetcher.py 兼容层创建并正确重导出
+- [ ] 旧文件位置 data_processor.py 兼容层创建并正确重导出
+- [ ] 旧文件位置 visualizer.py 兼容层创建并正确重导出
+- [ ] 旧文件位置 report_generator.py 兼容层创建并正确重导出
+- [ ] 旧文件位置 data_source_manager.py 兼容层创建并正确重导出
+- [ ] 旧文件位置 data_completion.py 兼容层创建并正确重导出
+- [ ] 旧文件位置 incremental_updater.py 兼容层创建并正确重导出
+- [ ] 旧文件位置 data_monitor.py 兼容层创建并正确重导出
+- [ ] 旧文件位置 logger.py 兼容层创建并正确重导出
+- [ ] 旧文件位置 retry.py 兼容层创建并正确重导出
+- [ ] 旧文件位置 secure_config.py 兼容层创建并正确重导出
+- [ ] main.py 导入路径已更新为新路径
+- [ ] test_analyzer.py 导入路径已更新
+- [ ] test_data_fetcher.py 导入路径已更新
+- [ ] test_data_processor.py 导入路径已更新
+- [ ] test_data_source_manager.py 导入路径已更新
+- [ ] test_data_completion.py 导入路径已更新
+- [ ] test_secure_config.py 导入路径已更新
+- [ ] test_full_validation.py 所有导入路径已更新
+- [ ] pytest tests/ 全部通过
+- [ ] 旧路径导入兼容性验证通过（from etf_analyzer.analyzer import ETFAnalyzer 等）

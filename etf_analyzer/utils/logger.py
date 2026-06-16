@@ -11,7 +11,7 @@ import os
 from logging.handlers import RotatingFileHandler
 from datetime import datetime
 
-from etf_analyzer.config import LOG_DIR_PATH, LOG_LEVEL, LOG_FORMAT, ensure_dirs
+from config import LOG_DIR_PATH, LOG_LEVEL, LOG_FORMAT, ensure_dirs
 
 
 def setup_logger(name="etf_analyzer", level=None):

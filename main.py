@@ -11,13 +11,13 @@ import os
 import subprocess
 from datetime import datetime
 
-from etf_analyzer.config import ensure_dirs, REPORT_DIR_PATH, DEFAULT_START_DATE
-from etf_analyzer.logger import setup_logger
-from etf_analyzer.data_fetcher import ETFDataFetcher
-from etf_analyzer.data_processor import DataProcessor
-from etf_analyzer.analyzer import ETFAnalyzer
-from etf_analyzer.visualizer import ETFVisualizer
-from etf_analyzer.report_generator import ReportGenerator, AVAILABLE_MODULES
+from config import ensure_dirs, REPORT_DIR_PATH, DEFAULT_START_DATE
+from etf_analyzer.utils.logger import setup_logger
+from etf_analyzer.core.data_fetcher import ETFDataFetcher
+from etf_analyzer.core.data_processor import DataProcessor
+from etf_analyzer.core.analyzer import ETFAnalyzer
+from etf_analyzer.core.visualizer import ETFVisualizer
+from etf_analyzer.core.report_generator import ReportGenerator, AVAILABLE_MODULES
 
 
 class ETFCLI:

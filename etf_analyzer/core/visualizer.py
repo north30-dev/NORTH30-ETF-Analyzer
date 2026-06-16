@@ -15,7 +15,7 @@ import mplfinance as mpf
 import pandas as pd
 import numpy as np
 
-from etf_analyzer.logger import setup_logger
+from etf_analyzer.utils.logger import setup_logger
 
 # 设置全局中文字体和负号显示
 plt.rcParams["font.sans-serif"] = ["SimHei"]

@@ -11,7 +11,7 @@ from unittest.mock import patch, MagicMock, PropertyMock
 import pandas as pd
 import pytest
 
-from etf_analyzer.data_source_manager import DataSourceManager
+from etf_analyzer.services.data_source_manager import DataSourceManager
 from etf_analyzer.data_sources.base import BaseDataSource
 
 
@@ -97,7 +97,7 @@ class TestFailover:
         # 禁用健康检查间隔限制
         self.manager._last_health_check_time = 0
 
-    @patch("etf_analyzer.data_source_manager.DATASOURCE_HEALTH_CHECK_INTERVAL", 0)
+    @patch("etf_analyzer.services.data_source_manager.DATASOURCE_HEALTH_CHECK_INTERVAL", 0)
     def test_failover_to_next_source_on_failure(self):
         """测试主数据源失败时自动切换到备选数据源。"""
         source_primary = _make_mock_source("akshare")
@@ -131,7 +131,7 @@ class TestFailover:
         assert result != {}
         assert result["symbol"] == "510300"
 
-    @patch("etf_analyzer.data_source_manager.DATASOURCE_HEALTH_CHECK_INTERVAL", 0)
+    @patch("etf_analyzer.services.data_source_manager.DATASOURCE_HEALTH_CHECK_INTERVAL", 0)
     def test_all_sources_fail_returns_empty_data(self):
         """测试所有数据源失败时返回空数据。"""
         source_a = _make_mock_source("akshare")
@@ -159,7 +159,7 @@ class TestFailover:
         # 所有数据源失败时应返回空字典
         assert result == {}
 
-    @patch("etf_analyzer.data_source_manager.DATASOURCE_HEALTH_CHECK_INTERVAL", 0)
+    @patch("etf_analyzer.services.data_source_manager.DATASOURCE_HEALTH_CHECK_INTERVAL", 0)
     def test_failover_on_exception(self):
         """测试数据源抛出异常时自动切换。"""
         source_primary = _make_mock_source("akshare")
@@ -206,7 +206,7 @@ class TestPrioritySorting:
         """每个测试方法执行前的初始化。"""
         self.manager = DataSourceManager()
 
-    @patch("etf_analyzer.data_source_manager.DATASOURCE_PRIORITY",
+    @patch("etf_analyzer.services.data_source_manager.DATASOURCE_PRIORITY",
            ["tushare", "akshare", "baostock", "pytdx"])
     def test_sources_sorted_by_config_priority(self):
         """测试按配置优先级排序数据源。"""
@@ -224,7 +224,7 @@ class TestPrioritySorting:
         assert names.index("tushare") < names.index("akshare")
         assert names.index("akshare") < names.index("baostock")
 
-    @patch("etf_analyzer.data_source_manager.DATASOURCE_PRIORITY",
+    @patch("etf_analyzer.services.data_source_manager.DATASOURCE_PRIORITY",
            ["akshare", "tushare"])
     def test_unknown_source_goes_to_end(self):
         """测试不在配置列表中的数据源排到末尾。"""
@@ -258,7 +258,7 @@ class TestConvenienceMethods:
             "response_time": 0.1, "error": None,
         }
 
-    @patch("etf_analyzer.data_source_manager.DATASOURCE_HEALTH_CHECK_INTERVAL", 0)
+    @patch("etf_analyzer.services.data_source_manager.DATASOURCE_HEALTH_CHECK_INTERVAL", 0)
     def test_get_realtime_quote_delegates(self):
         """测试 get_realtime_quote 正确委托给 fetch。"""
         expected = {
@@ -274,7 +274,7 @@ class TestConvenienceMethods:
         assert result == expected
         self.source.get_realtime_quote.assert_called_once_with(symbol="510300")
 
-    @patch("etf_analyzer.data_source_manager.DATASOURCE_HEALTH_CHECK_INTERVAL", 0)
+    @patch("etf_analyzer.services.data_source_manager.DATASOURCE_HEALTH_CHECK_INTERVAL", 0)
     def test_get_history_data_delegates(self):
         """测试 get_history_data 正确委托给 fetch。"""
         expected = pd.DataFrame({
@@ -290,7 +290,7 @@ class TestConvenienceMethods:
             symbol="510300", start_date="20240101", end_date="20240201", adjust="qfq",
         )
 
-    @patch("etf_analyzer.data_source_manager.DATASOURCE_HEALTH_CHECK_INTERVAL", 0)
+    @patch("etf_analyzer.services.data_source_manager.DATASOURCE_HEALTH_CHECK_INTERVAL", 0)
     def test_get_etf_list_delegates(self):
         """测试 get_etf_list 正确委托给 fetch。"""
         expected = pd.DataFrame({"代码": ["510300"], "名称": ["沪深300ETF"]})
@@ -301,7 +301,7 @@ class TestConvenienceMethods:
         assert result.equals(expected)
         self.source.get_etf_list.assert_called_once_with(keyword=None)
 
-    @patch("etf_analyzer.data_source_manager.DATASOURCE_HEALTH_CHECK_INTERVAL", 0)
+    @patch("etf_analyzer.services.data_source_manager.DATASOURCE_HEALTH_CHECK_INTERVAL", 0)
     def test_get_etf_holdings_delegates(self):
         """测试 get_etf_holdings 正确委托给 fetch。"""
         expected = pd.DataFrame({"股票代码": ["600519"], "股票名称": ["贵州茅台"]})

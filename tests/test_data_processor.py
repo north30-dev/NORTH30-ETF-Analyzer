@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from etf_analyzer.data_processor import DataProcessor
+from etf_analyzer.core.data_processor import DataProcessor
 
 
 class TestDataProcessor:

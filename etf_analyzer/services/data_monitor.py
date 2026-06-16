@@ -8,11 +8,11 @@
 
 from datetime import datetime
 
-from etf_analyzer.config import (
+from config import (
     DATASOURCE_FAILURE_THRESHOLD,
     DATA_QUALITY_THRESHOLD,
 )
-from etf_analyzer.logger import setup_logger
+from etf_analyzer.utils.logger import setup_logger
 
 # 告警事件最大保留数量
 MAX_ALERT_EVENTS = 1000
@@ -49,7 +49,7 @@ class DataMonitor:
         """
         if self._manager is None:
             try:
-                from etf_analyzer.data_source_manager import DataSourceManager
+                from etf_analyzer.services.data_source_manager import DataSourceManager
                 self._manager = DataSourceManager()
                 self._manager.register_all()
             except Exception as e:

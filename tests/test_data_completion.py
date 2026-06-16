@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from etf_analyzer.data_completion import DataCompletion
+from etf_analyzer.services.data_completion import DataCompletion
 
 
 # ============================================================

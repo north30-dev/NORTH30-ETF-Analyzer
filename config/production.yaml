@@ -1,0 +1,11 @@
+server:
+  debug: false
+  cors_origins:
+    - "https://your-domain.com"
+
+database:
+  pool_size: 10
+  max_overflow: 20
+
+logging:
+  level: "WARNING"

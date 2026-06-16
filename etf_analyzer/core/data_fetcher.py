@@ -15,9 +15,9 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 
-from etf_analyzer.config import CACHE_DIR_PATH, CACHE_EXPIRE_HOURS, DEFAULT_START_DATE, ensure_dirs
-from etf_analyzer.data_source_manager import DataSourceManager
-from etf_analyzer.logger import setup_logger
+from config import CACHE_DIR_PATH, CACHE_EXPIRE_HOURS, DEFAULT_START_DATE, ensure_dirs
+from etf_analyzer.services.data_source_manager import DataSourceManager
+from etf_analyzer.utils.logger import setup_logger
 
 
 class ETFDataFetcher:
@@ -246,7 +246,7 @@ class ETFDataFetcher:
             # 首次调用时获取并缓存交易日历
             if self._trade_calendar is None:
                 import akshare as ak
-                from etf_analyzer.retry import retry, rate_limiter
+                from etf_analyzer.utils.retry import retry, rate_limiter
 
                 @retry()
                 def _fetch_calendar():

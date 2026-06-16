@@ -15,7 +15,7 @@ from unittest.mock import patch, MagicMock, PropertyMock
 import pandas as pd
 import pytest
 
-from etf_analyzer.data_fetcher import ETFDataFetcher
+from etf_analyzer.core.data_fetcher import ETFDataFetcher
 
 
 class TestETFDataFetcher:

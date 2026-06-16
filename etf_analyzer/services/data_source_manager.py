@@ -11,13 +11,13 @@ import threading
 
 import pandas as pd
 
-from etf_analyzer.config import DATASOURCE_PRIORITY, DATASOURCE_HEALTH_CHECK_INTERVAL
+from config import DATASOURCE_PRIORITY, DATASOURCE_HEALTH_CHECK_INTERVAL
 from etf_analyzer.data_sources.base import BaseDataSource
 from etf_analyzer.data_sources.akshare_source import AkshareDataSource
 from etf_analyzer.data_sources.baostock_source import BaostockDataSource
 from etf_analyzer.data_sources.pytdx_source import PytdxDataSource
 from etf_analyzer.data_sources.tushare_source import TushareDataSource
-from etf_analyzer.logger import setup_logger
+from etf_analyzer.utils.logger import setup_logger
 
 # 数据源名称到类的映射，用于 register_all 自动实例化
 _SOURCE_CLASS_MAP = {

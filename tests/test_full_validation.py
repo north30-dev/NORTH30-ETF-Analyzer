@@ -17,7 +17,7 @@ print("=" * 60)
 print("1. 增量更新模块功能验证")
 print("=" * 60)
 
-from etf_analyzer.incremental_updater import IncrementalUpdater
+from etf_analyzer.services.incremental_updater import IncrementalUpdater
 
 updater = IncrementalUpdater()
 print("[PASS] IncrementalUpdater 初始化成功")
@@ -56,7 +56,7 @@ print("=" * 60)
 print("2. 数据异常预警模块功能验证")
 print("=" * 60)
 
-from etf_analyzer.data_monitor import DataMonitor
+from etf_analyzer.services.data_monitor import DataMonitor
 
 monitor = DataMonitor()
 print("[PASS] DataMonitor 初始化成功")
@@ -102,11 +102,11 @@ print("=" * 60)
 print("3. 原有模块兼容性验证")
 print("=" * 60)
 
-from etf_analyzer.analyzer import ETFAnalyzer
-from etf_analyzer.visualizer import ETFVisualizer
-from etf_analyzer.report_generator import ReportGenerator
-from etf_analyzer.data_processor import DataProcessor
-from etf_analyzer.data_fetcher import ETFDataFetcher
+from etf_analyzer.core.analyzer import ETFAnalyzer
+from etf_analyzer.core.visualizer import ETFVisualizer
+from etf_analyzer.core.report_generator import ReportGenerator
+from etf_analyzer.core.data_processor import DataProcessor
+from etf_analyzer.core.data_fetcher import ETFDataFetcher
 
 analyzer = ETFAnalyzer()
 print("[PASS] ETFAnalyzer 初始化成功")
@@ -157,8 +157,8 @@ print("=" * 60)
 print("4. 安全配置管理验证")
 print("=" * 60)
 
-from etf_analyzer.secure_config import secure_config
-from etf_analyzer.config import (
+from etf_analyzer.utils.secure_config import secure_config
+from config import (
     DATASOURCE_PRIORITY, DATASOURCE_HEALTH_CHECK_INTERVAL,
     DATASOURCE_FAILURE_THRESHOLD, DATA_QUALITY_THRESHOLD,
     CROSS_VALIDATION_THRESHOLD, TUSHARE_TOKEN, PYTDX_HOST, PYTDX_PORT,
@@ -194,7 +194,7 @@ print("=" * 60)
 print("5. 数据源管理器验证")
 print("=" * 60)
 
-from etf_analyzer.data_source_manager import DataSourceManager
+from etf_analyzer.services.data_source_manager import DataSourceManager
 
 manager = DataSourceManager()
 manager.register_all()
@@ -213,7 +213,7 @@ print("=" * 60)
 print("6. 智能数据补全验证")
 print("=" * 60)
 
-from etf_analyzer.data_completion import DataCompletion
+from etf_analyzer.services.data_completion import DataCompletion
 
 completion = DataCompletion()
 

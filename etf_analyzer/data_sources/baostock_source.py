@@ -11,7 +11,7 @@ import time
 import pandas as pd
 
 from etf_analyzer.data_sources.base import BaseDataSource
-from etf_analyzer.logger import setup_logger
+from etf_analyzer.utils.logger import setup_logger
 
 
 class BaostockDataSource(BaseDataSource):

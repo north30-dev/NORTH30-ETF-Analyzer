@@ -1,0 +1,81 @@
+# ETF Analyzer 默认配置
+# 所有配置项均可通过环境变量覆盖，环境变量名与配置项键名一致（大写）
+
+# ==================== API 服务配置 ====================
+server:
+  host: "0.0.0.0"          # 服务监听地址
+  port: 8000                # 服务监听端口
+  api_prefix: "/api/v1"    # API路由前缀
+  cors_origins:             # 允许的跨域来源
+    - "http://localhost:5173"
+    - "http://localhost:3000"
+  debug: true               # 调试模式
+
+# ==================== 数据库配置 ====================
+database:
+  driver: "mysql+pymysql"   # 数据库驱动
+  host: "127.0.0.1"         # 数据库主机
+  port: 3306                # 数据库端口
+  name: "etf_analyzer"      # 数据库名称
+  user: "root"              # 数据库用户名（建议通过环境变量配置）
+  password: ""              # 数据库密码（必须通过环境变量配置）
+  pool_size: 5              # 连接池大小
+  max_overflow: 10          # 连接池最大溢出
+  pool_recycle: 3600        # 连接回收时间（秒）
+
+# ==================== Redis 配置 ====================
+redis:
+  host: "127.0.0.1"         # Redis 主机
+  port: 6379                # Redis 端口
+  password: ""              # Redis 密码（建议通过环境变量配置）
+  db: 0                     # Redis 数据库编号
+
+# ==================== Celery 配置 ====================
+celery:
+  broker_url: "redis://127.0.0.1:6379/1"     # 消息代理 URL
+  result_backend: "redis://127.0.0.1:6379/2"  # 结果后端 URL
+  task_serializer: "json"    # 任务序列化方式
+  result_serializer: "json"  # 结果序列化方式
+  accept_content:            # 接受的内容类型
+    - "json"
+  timezone: "Asia/Shanghai"  # 时区
+  enable_utc: false          # 是否启用 UTC
+
+# ==================== 数据源配置 ====================
+datasource:
+  priority:                  # 数据源优先级列表
+    - "akshare"
+    - "tushare"
+    - "baostock"
+    - "pytdx"
+  health_check_interval: 300 # 健康检查间隔（秒）
+  failure_threshold: 3       # 连续失败告警阈值
+  quality_threshold: 60      # 数据质量评分告警阈值
+  cross_validation_threshold: 1.0  # 交叉验证差异阈值（%）
+  tushare_token: ""          # Tushare Token（必须通过环境变量配置）
+  pytdx_host: "119.147.212.81"  # 通达信服务器地址
+  pytdx_port: 7709           # 通达信服务器端口
+
+# ==================== 分析参数配置 ====================
+analysis:
+  default_start_date: "20200101"  # 默认数据起始日期
+  risk_free_rate: 0.02            # 无风险利率
+
+# ==================== 报告配置 ====================
+report:
+  output_dir: "reports"      # 报告输出目录
+  font: "SimHei"             # 报告字体
+  font_size: 12              # 正文字体大小
+  title_font_size: 18        # 标题字体大小
+  page_size: "A4"            # 页面尺寸
+
+# ==================== 缓存配置 ====================
+cache:
+  dir: "cache"               # 缓存目录
+  expire_hours: 4            # 缓存过期时间（小时）
+
+# ==================== 日志配置 ====================
+logging:
+  dir: "logs"                # 日志目录
+  level: "INFO"              # 日志级别
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"  # 日志格式

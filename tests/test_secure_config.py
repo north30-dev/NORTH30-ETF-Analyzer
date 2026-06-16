@@ -11,7 +11,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from etf_analyzer.secure_config import SecureConfig
+from etf_analyzer.utils.secure_config import SecureConfig
 
 
 # ============================================================
