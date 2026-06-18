@@ -1,0 +1,17 @@
+- [x] BaseStrategy 抽象基类定义了统一接口（generate_signals、get_parameters、set_parameters、get_name、get_description），所有策略继承该基类
+- [x] 信号输出格式标准化为 DataFrame，包含 date、signal（1/-1/0）、position（0.0~1.0）列
+- [x] MomentumStrategy 实现N日动量信号生成，支持多周期动量模式
+- [x] MeanReversionStrategy 实现布林带/Z-Score信号生成，包含均值回归出场逻辑
+- [x] SectorRotationStrategy 实现多行业ETF动量排名与轮动信号，支持调仓频率控制
+- [x] MultiFactorStrategy 实现4个因子（动量、波动率、成交量、趋势）计算与加权综合评分
+- [x] BacktestDataLoader 支持API、CSV、数据库三种数据源加载，输出统一标准格式
+- [x] BacktestEngine 实现逐日模拟回测，支持交易成本模拟（佣金、印花税、滑点）
+- [x] BacktestEngine 计算完整绩效指标（总收益率、年化收益率、夏普比率、最大回撤、胜率、盈亏比、Calmar比率等）
+- [x] BacktestEngine 支持多策略对比回测
+- [x] GridSearchOptimizer 实现网格搜索参数寻优，支持按指定指标排序
+- [x] SignalGenerator 实现实时信号计算、仓位建议和策略执行报告生成
+- [x] 策略API接口实现（策略列表、参数查询/更新、信号生成）
+- [x] 回测API接口实现（执行回测、查询结果、多策略对比、参数寻优、回测历史）
+- [x] API路由在 main.py 中正确注册，Swagger文档可访问
+- [x] 配置文件中新增策略与回测相关配置项
+- [x] 单元测试覆盖策略、回测引擎、参数寻优、信号生成和API接口

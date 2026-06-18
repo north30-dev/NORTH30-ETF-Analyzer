@@ -1,6 +1,6 @@
 # NORTH30-ETF-Analyzer
 
-全链路 ETF 分析平台，支持命令行（CLI）和 Web 可视化界面（Vue 3 + RESTful API）两种使用方式。提供多数据源获取、智能数据补全、增量更新与异常预警，以及从数据获取、清洗、分析到可视化与报告生成的全链路能力。
+全链路 ETF 分析平台，支持命令行（CLI）和 Web 可视化界面（Vue 3 + RESTful API）两种使用方式。提供多数据源获取、智能数据补全、增量更新与异常预警，量化策略分析与回测框架，以及从数据获取、清洗、分析、策略回测到可视化与报告生成的全链路能力。
 
 ## 功能特性
 
@@ -460,6 +460,8 @@ NORTH30-ETF-Analyzer/
 | celery | Celery 异步任务（broker_url、result_backend、worker_concurrency） |
 | datasource | 数据源配置（priority、health_check_interval、failure_threshold） |
 | analysis | 分析参数（default_start_date、risk_free_rate） |
+| strategy | 策略参数（momentum、mean_reversion、sector_rotation、multi_factor） |
+| backtest | 回测参数（commission_rate、stamp_tax_rate、slippage、initial_capital） |
 | report | 报告配置（font、font_size、title_font_size） |
 | cache | 缓存配置（dir_path、expire_hours） |
 | logging | 日志配置（level、format、dir_path） |

@@ -79,3 +79,45 @@ logging:
   dir: "logs"                # 日志目录
   level: "INFO"              # 日志级别
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"  # 日志格式
+
+# ==================== 策略配置 ====================
+strategy:
+  # 动量策略参数
+  momentum:
+    period: 20                # 动量计算周期
+    buy_threshold: 0.02       # 买入阈值
+    sell_threshold: -0.02     # 卖出阈值
+    use_multi_period: false   # 是否使用多周期
+    short_period: 10          # 短周期
+    long_period: 60           # 长周期
+  # 均值回归策略参数
+  mean_reversion:
+    period: 20                # 均值计算周期
+    std_multiplier: 2.0       # 标准差倍数
+    entry_threshold: 2.0      # 入场阈值
+    exit_zone: 0.5            # 离场区间
+  # 行业轮动策略参数
+  sector_rotation:
+    momentum_period: 20       # 动量计算周期
+    top_n: 3                  # 选取排名前N的行业
+    rebalance_freq: "monthly" # 调仓频率
+    drop_threshold: 3         # 排名下降阈值
+  # 多因子策略参数
+  multi_factor:
+    factor_weights:           # 因子权重
+      momentum: 0.3
+      volatility: 0.2
+      volume: 0.2
+      trend: 0.3
+    buy_threshold: 0.6        # 买入阈值
+    sell_threshold: 0.4       # 卖出阈值
+    window: 20                # 计算窗口期
+
+# ==================== 回测配置 ====================
+backtest:
+  commission_rate: 0.0003     # 交易佣金费率
+  stamp_tax_rate: 0.001       # 印花税费率
+  slippage: 0.001             # 滑点
+  initial_capital: 1000000    # 默认初始资金
+  default_metric: "sharpe_ratio"  # 参数寻优默认评估指标
+  default_top_n: 5            # 参数寻优默认保留前N组

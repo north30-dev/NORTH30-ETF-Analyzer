@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from config.settings import get_settings
-from api.routers import etf, analysis, chart, report
+from api.routers import etf, analysis, chart, report, strategy, backtest
 
 
 @asynccontextmanager
@@ -52,6 +52,8 @@ def create_app() -> FastAPI:
     app.include_router(analysis.router, prefix=api_prefix)
     app.include_router(chart.router, prefix=api_prefix)
     app.include_router(report.router, prefix=api_prefix)
+    app.include_router(strategy.router, prefix=api_prefix)
+    app.include_router(backtest.router, prefix=api_prefix)
 
     return app
 

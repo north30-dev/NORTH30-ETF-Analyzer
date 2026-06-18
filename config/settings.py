@@ -150,6 +150,83 @@ class LoggingSettings(BaseSettings):
     model_config = {"env_prefix": "LOGGING_", "env_file": ".env", "env_file_encoding": "utf-8"}
 
 
+class MomentumSettings(BaseSettings):
+    """动量策略配置"""
+
+    period: int = 20
+    buy_threshold: float = 0.02
+    sell_threshold: float = -0.02
+    use_multi_period: bool = False
+    short_period: int = 10
+    long_period: int = 60
+
+    model_config = {"env_prefix": "STRATEGY_MOMENTUM_", "env_file": ".env", "env_file_encoding": "utf-8"}
+
+
+class MeanReversionSettings(BaseSettings):
+    """均值回归策略配置"""
+
+    period: int = 20
+    std_multiplier: float = 2.0
+    entry_threshold: float = 2.0
+    exit_zone: float = 0.5
+
+    model_config = {"env_prefix": "STRATEGY_MEAN_REVERSION_", "env_file": ".env", "env_file_encoding": "utf-8"}
+
+
+class SectorRotationSettings(BaseSettings):
+    """行业轮动策略配置"""
+
+    momentum_period: int = 20
+    top_n: int = 3
+    rebalance_freq: str = "monthly"
+    drop_threshold: int = 3
+
+    model_config = {"env_prefix": "STRATEGY_SECTOR_ROTATION_", "env_file": ".env", "env_file_encoding": "utf-8"}
+
+
+class MultiFactorSettings(BaseSettings):
+    """多因子策略配置"""
+
+    factor_weights: dict = Field(
+        default_factory=lambda: {
+            "momentum": 0.3,
+            "volatility": 0.2,
+            "volume": 0.2,
+            "trend": 0.3,
+        }
+    )
+    buy_threshold: float = 0.6
+    sell_threshold: float = 0.4
+    window: int = 20
+
+    model_config = {"env_prefix": "STRATEGY_MULTI_FACTOR_", "env_file": ".env", "env_file_encoding": "utf-8"}
+
+
+class StrategySettings(BaseSettings):
+    """策略配置"""
+
+    momentum: MomentumSettings = Field(default_factory=MomentumSettings)
+    mean_reversion: MeanReversionSettings = Field(default_factory=MeanReversionSettings)
+    sector_rotation: SectorRotationSettings = Field(default_factory=SectorRotationSettings)
+    multi_factor: MultiFactorSettings = Field(default_factory=MultiFactorSettings)
+
+    model_config = {"env_prefix": "STRATEGY_", "env_file": ".env", "env_file_encoding": "utf-8"}
+
+
+class BacktestSettings(BaseSettings):
+    """回测配置"""
+
+    commission_rate: float = 0.0003
+    stamp_tax_rate: float = 0.001
+    slippage: float = 0.001
+    initial_capital: int = 1000000
+    default_metric: str = "sharpe_ratio"
+    default_top_n: int = 5
+
+    model_config = {"env_prefix": "BACKTEST_", "env_file": ".env", "env_file_encoding": "utf-8"}
+
+
 class Settings(BaseSettings):
     """全局统一配置
 
@@ -173,6 +250,8 @@ class Settings(BaseSettings):
     report: ReportSettings = Field(default_factory=ReportSettings)
     cache: CacheSettings = Field(default_factory=CacheSettings)
     logging: LoggingSettings = Field(default_factory=LoggingSettings)
+    strategy: StrategySettings = Field(default_factory=StrategySettings)
+    backtest: BacktestSettings = Field(default_factory=BacktestSettings)
 
     # 行业分类映射（不从 YAML 加载，保持硬编码）
     sw_industry_map: dict = Field(default_factory=dict)
@@ -215,6 +294,8 @@ class Settings(BaseSettings):
             "report": (ReportSettings, "REPORT_"),
             "cache": (CacheSettings, "CACHE_"),
             "logging": (LoggingSettings, "LOGGING_"),
+            "strategy": (StrategySettings, "STRATEGY_"),
+            "backtest": (BacktestSettings, "BACKTEST_"),
         }
 
         for section, (settings_cls, env_prefix) in section_map.items():
